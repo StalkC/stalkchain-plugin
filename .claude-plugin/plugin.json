@@ -1,0 +1,11 @@
+{
+  "name": "stalkchain",
+  "displayName": "StalkChain",
+  "version": "1.0.0",
+  "description": "Crypto research in plain English: check a coin before you buy, vet a trader before you copy them, see what smart money is buying right now, and look up any wallet on Solana, Base, BNB Chain, Ethereum and more. Read-only.",
+  "author": { "name": "StalkChain", "url": "https://stalkchain.com" },
+  "homepage": "https://stalkchain.com/mcp",
+  "repository": "https://github.com/StalkC/stalkchain-plugin",
+  "license": "MIT",
+  "keywords": ["crypto", "solana", "smart-money", "wallets", "memecoins", "research", "defi"]
+}
