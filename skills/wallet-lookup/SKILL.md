@@ -16,13 +16,15 @@ Tell the user who or what this wallet is, what it holds, and what it has done. U
 ## 2. Look it up
 
 **Solana wallet**
-1. `stalkchain_wallet_pnl` with `wallet`: realised and unrealised profit, win rate, total invested, average buy size and current positions.
-2. To see what it holds right now: `stalkchain_wallet_portfolio` with `wallet` and `chains: ["solana"]`.
+1. `stalkchain_wallet_pnl` with `wallet` (500 credits, or 250 with `includeHoldings: false`): realised and unrealised profit, win rate, total invested, average buy size and current positions.
+2. Only if you skipped holdings above, or the user wants the USD breakdown: `stalkchain_wallet_portfolio` with `wallet` and `chains: ["solana"]` (250 credits).
 
 **EVM wallet**
-1. `stalkchain_wallet_portfolio` with `wallet`: holdings and USD value on every chain. It is priced per five chains, so pass `chains` when the user names specific ones.
-2. `stalkchain_wallet_age` with `wallet`: first transaction and lifetime activity per chain. A brand-new wallet moving large sums is the clearest warning sign.
-3. If asked what it has been doing, or who funded it: `stalkchain_wallet_transfers` with `wallet` and `chain`, the newest transfers first.
+1. `stalkchain_wallet_portfolio` with `wallet` (250 credits per five chains, so 500 for all seven): holdings and USD value on every chain. Pass `chains` when the user names specific ones, and `minValueUsd` to drop dust.
+2. `stalkchain_wallet_age` with `wallet` (500 credits per chain, so pass `chains`): first transaction and lifetime activity. A brand-new wallet moving large sums is the clearest warning sign.
+3. If asked what it has been doing, or who funded it: `stalkchain_wallet_transfers` with `wallet` and `chain` (500 credits), newest first. Use `order: "asc"` to see how the wallet started and who funded it.
+
+In Claude and ChatGPT, `stalkchain_wallet_portfolio` shows the user an interactive card. Don't re-list every holding; say what stands out. Where no card appears (a terminal), list the top holdings.
 
 **Is it a known trader?** StalkChain can't look up who owns an arbitrary address: trader search matches names and handles, not wallets. If the user thinks it belongs to a particular trader, ask for the handle, run the **trader-check** skill, and compare the wallets it returns with this address.
 
@@ -38,8 +40,10 @@ Tell the user who or what this wallet is, what it holds, and what it has done. U
 
 **Recent activity:** only if transfers were fetched. Summarise the largest moves; don't list everything.
 
+To check how risky the holdings are, offer the **portfolio-review** skill.
+
 ## Rules
 
-- A missing value is `null`, never zero.
+- A missing value is `null`, never zero. A chain listed under failed chains was not checked; it is not empty.
 - Public blockchain data is public, but don't speculate about the real-world identity of a wallet owner beyond what the data shows.
-- Keep raw JSON out of the answer.
+- Keep raw JSON out of the answer. Data, not financial advice.

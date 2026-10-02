@@ -11,22 +11,26 @@ Answer one question for the user: **what do the facts say about this coin right 
 ## 1. Pin down the token
 
 - A Solana mint is base58, 32–44 characters. An EVM contract is `0x` followed by 40 hex characters.
-- If the user gave a ticker or name instead of an address, call `stalkchain_fomo_search` with `q` set to it and `type: "tokens"`. If several tokens share the ticker, show the top matches with chain and market cap, and ask which one. Never guess between look-alikes: scam tokens copy popular tickers.
+- If the user gave a ticker or name instead of an address, call `stalkchain_fomo_search` with `q` set to it and `type: "tokens"` (250 credits). If several tokens share the ticker, show the top matches with chain and market cap, and ask which one. Never guess between look-alikes: scam tokens copy popular tickers.
 
 ## 2. Run the core checks
 
-Run these, in parallel where your client allows:
+**Solana**, cheapest first (in parallel where your client allows):
 
-1. `stalkchain_fomo_analyze_token` with `address`. This gives buy and sell flow, smart-money holders, and the dev's and insiders' positions in one call.
-2. **Solana only:** `stalkchain_token_onchain` with `token`. This gives the true total holder count, whether the liquidity pool is burned, whether mint or freeze authority is still live, top-10 concentration, sniper and insider share, and a risk score.
-3. **Solana only:** `stalkchain_token_quality` with `token`. This shows organic versus total volume; a low organic share means wash trading.
+1. `stalkchain_token_onchain` with `token` (250 credits): true total holder count, whether the liquidity pool is burned, whether mint or freeze authority is still live, top-10 concentration, sniper and insider share, a risk score, and whether it is already flagged as rugged. If it is flagged rugged, say so and ask before spending more.
+2. `stalkchain_token_quality` with `token` (250 credits): organic versus total volume. A low organic share means wash trading.
+3. `stalkchain_fomo_analyze_token` with `address` (750 credits): buy and sell flow, tracked smart-money holders, and the dev's and insiders' positions in one call.
+
+**EVM chains** (Base, BNB Chain, Ethereum, Monad, Robinhood Chain): the on-chain tools above are Solana-only, so call `stalkchain_fomo_analyze_token` with `address`, plus `chain` if it returns nothing. If it is a bare contract nobody tracks, `stalkchain_token_info` with `chain` and `address` (250 credits) at least names it.
+
+In Claude and ChatGPT, `stalkchain_fomo_analyze_token` shows the user an interactive card. Don't re-list its numbers; add what they mean and the verdict. Where no card appears (a terminal), include the key numbers.
 
 ## 3. Go deeper only when it matters
 
-- The user mentions a position size, or liquidity looks thin: `stalkchain_token_exit_check` with `token` and `usd` set to their size. This quotes what they would really get back on a sale.
-- The coin is new (days old), or the dev is unknown: `stalkchain_token_deployer` with `token`, which lists everything that wallet launched before and how each one ended.
-- Many early wallets, or the launch looks sniped: `stalkchain_token_early_buyers` with `token`.
-- The user wants to know whether the big holders are leaving: `stalkchain_fomo_kol_sell_pressure` with `address`.
+- The user mentions a position size, or liquidity looks thin: `stalkchain_token_exit_check` with `token` and `usd` set to their size (500 credits). This quotes what they would really get back on a sale.
+- The coin is new (days old), or the dev is unknown: `stalkchain_token_deployer` with `token` (500 credits), which lists everything that wallet launched before and how each one ended.
+- Many early wallets, or the launch looks sniped: `stalkchain_token_early_buyers` with `token` (500 credits).
+- The user wants to know whether the big holders are leaving: `stalkchain_fomo_kol_sell_pressure` with `address` (375 credits).
 
 ## 4. Answer in this shape
 
