@@ -1,0 +1,13 @@
+{
+  "name": "stalkchain",
+  "description": "StalkChain's plugins for Claude Code and Cowork: crypto research on live trader, token and wallet data.",
+  "owner": { "name": "StalkChain", "url": "https://stalkchain.com" },
+  "plugins": [
+    {
+      "name": "stalkchain",
+      "source": "./",
+      "description": "Check a coin before you buy, vet a trader before you copy them, see what smart money is buying, review a wallet and set price alerts. Never trades or moves funds.",
+      "category": "finance"
+    }
+  ]
+}

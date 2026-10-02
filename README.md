@@ -41,7 +41,12 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 
 ## Get started
 
-1. Install the plugin: from your app's plugin directory in Claude, Cowork or ChatGPT, or in Claude Code from a plugin marketplace that lists it. To try a local copy in Claude Code, run `claude --plugin-dir ./stalkchain-plugin`.
+1. Install the plugin from your app's plugin directory in Claude, Cowork or ChatGPT. In Claude Code, this repository is also a plugin marketplace:
+
+   ```
+   /plugin marketplace add StalkC/stalkchain-plugin
+   /plugin install stalkchain@stalkchain
+   ```
 2. Connect **StalkChain** (the plugin's **Connectors** tab, or `/mcp` in Claude Code) and sign in with your StalkChain account. You'll need credits, which you can buy at [data.stalkchain.com](https://data.stalkchain.com).
 3. Ask a question, for example "What are the top traders buying on Solana right now?"
 

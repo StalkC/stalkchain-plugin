@@ -1,0 +1,2688 @@
+{
+ "tools": [
+  {
+   "name": "stalkchain_health",
+   "title": "Data source health",
+   "description": "Is the API up or down. Liveness, loaded trader count and uptime. Use when a call just failed and you need to say whether the service is down or the request was wrong. Free, no key needed, 0 credits.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_search",
+   "title": "Search traders and tokens",
+   "description": "Which wallets belong to this handle — look up a trader by name or handle and get the wallet addresses that belong to them, plus userId and PnL. The cheap first step for any named person. Returns wallet addresses, userId and PnL — the cheap first step for any named person. Also finds tokens by ticker or name. For an arbitrary wallet address you already have, use stalkchain_wallet_pnl. Search by handle or display name (traders) or symbol/name (tokens). 250 credits. Trader hits already include userId, both wallets and PnL, so this is the CHEAP way to look a trader up (vs stalkchain_fomo_resolve_trader at 2,500). Token hits give address, name, market cap, networkId. Searching by userId is not supported - use stalkchain_fomo_resolve_trader for that.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "q": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Handle, display name, token symbol or token name"
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "traders",
+       "tokens",
+       "all"
+      ],
+      "description": "Restrict result type (default all)"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "required": [
+     "q"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_resolve_trader",
+   "title": "Resolve trader (full live profile)",
+   "description": "The complete live profile for one trader, when search is not enough. START WITH stalkchain_fomo_search (250 credits) — it already returns wallets, userId and PnL. Only come here when you need the full record. ~35 live fields: real Solana + EVM wallets, pnl {24h,7d,30d,all}, volume, trades, swapCount, followers/following, holdings count, topTokens, verified, description, clan, createdAt + accountAgeDays, averageHoldTimeSeconds, private/restricted flags. EXPENSIVE: 2,500 credits on a hit (250 on an unknown handle). If you only need wallets/userId/PnL, call stalkchain_fomo_search first (250). Result is cached 15 min. wallets.status=\"resolving\" means try again shortly.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Trader handle (case-insensitive, optional @) or userId (UUID). Prefer userId when known: handles can be renamed."
+     },
+     "fresh": {
+      "type": "boolean",
+      "description": "Bypass the cache (costs credits again)"
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trader_positions",
+   "title": "Trader positions (open/closed, entry/exit, PnL)",
+   "description": "What positions does this trader hold, and what did they enter and exit at. One row per token position: status, amount, avgEntryPrice/avgExitPrice, realized/unrealized PnL, costBasisUsd, bought/sold/transferredIn/Out amounts, priceUsd, chain, createdAt/closedAt, tradeId. 250 credits per upstream call. Upstream returns all OPEN positions but only 25 most-recent CLOSED per call: use status=closed for closed history, cursor='start' then nextCursor to page, or deep=true to fan out across chains/orders in one call (up to ~12 calls = 3,000 credits; deep=N buys N calls). A full history is never obtainable from the provider (complete is always false; closedTotalUpstream tells the real total). avgEntryPrice null = tokens were received, not bought. available:false = not captured yet. Heavy accounts often time out on the plain read; the server then automatically retries with deep=2 (per-chain fetch, same 250 credits) and marks the result [fallback: deep=2].",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Trader handle (case-insensitive, optional @) or userId (UUID). Prefer userId when known: handles can be renamed."
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "open",
+       "closed",
+       "all"
+      ],
+      "description": "Narrow to open or closed. Traders with 200+ open positions hide all closed rows unless status=closed."
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "description": "Rows per page (max 200)"
+     },
+     "cursor": {
+      "type": "string",
+      "description": "'start' for page 1, then the previous response's nextCursor"
+     },
+     "deep": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 12
+       }
+      ],
+      "description": "true = full fan-out (~12 upstream calls); N (2-12) = buy only N upstream calls"
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trader_swaps",
+   "title": "Trader fills (individual swaps)",
+   "description": "Every individual buy and sell this trader made, fill by fill. Answers 'every fill he has done', 'his trade history', 'all his swaps'. Use for the raw swap history rather than aggregated positions (for those use stalkchain_fomo_trader_positions). 100 per page, newest first: swapId, chain, tokenIn/tokenOut {address, amount, usd}, tradeIdIn/tradeIdOut (join to positions), at. 250 credits per page; page with cursor=nextCursor. The 100 cap is per FILTER: pass tokenAddress to reach months back for one token. deep=true re-asks per chain/token and accumulates across calls (moreAvailable/filtersRemaining say if another call helps). source='relay' reads the on-chain bridge instead (every chain in one query, usd at trade time AND usdNow, needs the trader resolved first; 409 retryable while resolving; keep calling while moreAvailable).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Trader handle (case-insensitive, optional @) or userId (UUID). Prefer userId when known: handles can be renamed."
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "cursor": {
+      "type": "string",
+      "description": "nextCursor from the previous page"
+     },
+     "tokenAddress": {
+      "type": "string",
+      "description": "Scope to one token contract (reaches further back)"
+     },
+     "deep": {
+      "type": "boolean",
+      "description": "Accumulate more fills across chain/token filters"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "relay"
+      ],
+      "description": "'relay' = on-chain source across all chains"
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trader_balances",
+   "title": "Trader live portfolio (all chains)",
+   "description": "What is this trader holding in their wallet right now. Answers 'what is in his bags', 'current holdings', 'what does he hold now'. Live portfolio and current bags across Robinhood Chain, Solana, Ethereum, Base, BSC, Monad in ONE call: token {symbol,address,networkId}, chain, amount, priceUsd, valueUsd, change24h; plus totalValueUsd, byChain rollup, and livePerpPnl / hyperliquidPerps when present. 250 credits. Use chain= to narrow. Use for portfolio concentration and 'what are they holding right now'.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Trader handle (case-insensitive, optional @) or userId (UUID). Prefer userId when known: handles can be renamed."
+     },
+     "chain": {
+      "type": "string",
+      "enum": [
+       "robinhood",
+       "solana",
+       "base",
+       "bsc",
+       "eth",
+       "monad",
+       "hyperliquid"
+      ],
+      "description": "Narrow to one chain"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "description": "Max holdings rows returned (sorted by valueUsd desc)"
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trader_following",
+   "title": "Who a trader follows (discovery)",
+   "description": "Which accounts does this trader follow — the OUTBOUND direction, who they watch. For their own follower count use stalkchain_fomo_trader_followers. Useful for discovering traders you had no other way to find. Each account they watch, each annotated with followers, trades, volumeUsd, pnl24h, twitter, verified, accountAgeDays. 250 credits flat. Upstream caps at 200 names (truncated/sourceCapped flag it); partial+retryable=true means call again to resume. No wallets here - resolve a handle separately. Great for finding traders you had no other way to discover.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Trader handle (case-insensitive, optional @) or userId (UUID). Prefer userId when known: handles can be renamed."
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 300
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trader_followers",
+   "title": "Who follows a trader (sample of 200)",
+   "description": "How many people follow this trader, and who are they — the follower count and audience quality. This is the INBOUND direction; for the accounts they follow instead, use stalkchain_fomo_trader_following. A sample of the follower list, same per-person shape as following. Upstream serves at most 200 followers with no cursor, so this is a SAMPLE (sourceCapped=true), useful to judge the quality of a trader's backing, not to enumerate it. 250 credits flat.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Trader handle (case-insensitive, optional @) or userId (UUID). Prefer userId when known: handles can be renamed."
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trader_spotlight",
+   "title": "Trader's best trades and best theses (FOMO's pick)",
+   "description": "This trader's best ever trades and best written calls, as picked by the platform. The fastest way to judge someone you just came across. bestTrades[] and bestTheses[]: token, chain, entry/exit, cost basis, realized/unrealized PnL, openedAt/closedAt, the written thesis and its likes, tradeId. 250 credits. Fastest way to judge a trader you just found.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Trader handle (case-insensitive, optional @) or userId (UUID). Prefer userId when known: handles can be renamed."
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_leaderboard",
+   "title": "Trader leaderboard by PnL (24h/7d/30d/all)",
+   "description": "Who made the most money — the trader rich list for a window. Answers 'top earners', 'who is up the most', 'best performers this month'. Answers 'who is up the most in 24h/7d/30d/all time', 'top traders right now', 'biggest gainers'. Ranked traders: rank, handle, userId, displayName, pnlUsd (for the window), volumeUsd, trades, followers, holdings, wallets {solana, evm}, topTokens, verified. 250 credits per call at ANY limit, so ask for the full board (150; 100 on 'all') and filter locally. Answers 'who made the most money in the last 24h/7d/30d'. Arbitrary date ranges are NOT supported by the API - only these four windows. Cached 5 min.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "window": {
+      "type": "string",
+      "enum": [
+       "24h",
+       "7d",
+       "30d",
+       "all"
+      ],
+      "description": "Ranking window"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 150,
+      "description": "Rows to RETURN to you (the API is always asked for the full board)"
+     },
+     "minPnlUsd": {
+      "type": "number",
+      "description": "Local filter: only rows with pnlUsd >= this"
+     },
+     "verifiedOnly": {
+      "type": "boolean",
+      "description": "Local filter: only verified traders"
+     }
+    },
+    "required": [
+     "window"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_token_board",
+   "title": "Token boards: trending / most-held / graduated",
+   "description": "Which coins are hot right now — the token boards. Answers 'what is trending', 'what is everyone buying', 'what just graduated'. Returns a ranked list only; to also analyse them use stalkchain_fomo_trending_analysis. trending = what the provider users are trading right now; most-held = tokens held by the most users (the provider's board is 25, dominated by large caps, holders is null there); graduated = early-stage tokens that graduated (usually < $1M mcap). Each token: rank, token {name, symbol, address}, holders, network, priceUsd, change24h, marketCapUsd, volume24hUsd. Pulled live from the provider behind a 5-min cache; source='captured' + stale=true only when the provider did not answer. 250 credits.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "board": {
+      "type": "string",
+      "enum": [
+       "trending",
+       "most-held",
+       "graduated"
+      ]
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "required": [
+     "board"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_token_holders",
+   "title": "Smart-money holders of a token (tracked traders)",
+   "description": "GET /token/{address}/holders - which TRACKED the provider traders hold a token, ranked by USD value: (For the COUNT and the smart-money share of all holders, prefer stalkchain_fomo_kol_holders.) {handle, amount, valueUsd, priceUsd}. This is the 'which KOLs hold it' list. 250 credits. Populated from captured balances; available:false = nothing captured for this token yet. For a count + concentration summary use stalkchain_fomo_kol_holders instead.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_token_devs",
+   "title": "Deployer & insider positions on a token (rug signal)",
+   "description": "GET /v2/token/{address}/devs - the deployer and insiders with their own positions: Answers 'are the insiders still in or did they exit', 'did the dev sell'. handle, wallet, isDev, amount, valueUsd, costBasisUsd, realized/unrealized PnL, averageEntryPrice, averageHoldTimeSeconds, tradeId, and the dev's own written thesis. A dev closing their bag shows here first. An EMPTY list means the provider knows of no dev holding, NOT that the token is safe. 250 credits.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "chain": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "Chain name (robinhood|solana|base|bsc|eth|monad) or raw networkId. Only needed for tokens outside the provider's directory (else 400)."
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_token_stats",
+   "title": "Token buy/sell flow + holder concentration",
+   "description": "How many buys versus sells on this token, and how concentrated are the holders. Buy/sell flow and pressure per window — use for one named token; to compare which tokens several traders entered use stalkchain_fomo_multi_trader_entries. Windows {5m,1h,4h,24h} each with buys, sells, uniqueBuyers, uniqueSellers, buyVolumeUsd, sellVolumeUsd, netVolumeUsd, buySellRatio; plus total holders and top10HoldersPercent. This is the volume/flow tool ('who was pushing it'). 250 credits.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "chain": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "Chain name (robinhood|solana|base|bsc|eth|monad) or raw networkId. Only needed for tokens outside the provider's directory (else 400)."
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_token_candles",
+   "title": "OHLCV candles (Growth/Scale plans only)",
+   "description": "Price chart data for a token — OHLCV candles for charting or technical analysis. Growth/Scale plans only. OHLCV down to 1-second resolution. resolution: 1S|15S|30S|1|5|15|30|60|240|720|1D|7D (minutes unless suffixed). NOT available on Free or Starter keys (expect 402/403). For price on a free key use stalkchain_fomo_token_board / stalkchain_fomo_search (priceUsd, marketCapUsd) or stalkchain_fomo_token_holders (priceUsd).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "resolution": {
+      "type": "string",
+      "description": "e.g. 1, 5, 60, 1D, 15S"
+     },
+     "countBack": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "from": {
+      "type": [
+       "string",
+       "number"
+      ]
+     },
+     "to": {
+      "type": [
+       "string",
+       "number"
+      ]
+     },
+     "chain": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "Chain name (robinhood|solana|base|bsc|eth|monad) or raw networkId. Only needed for tokens outside the provider's directory (else 400)."
+     },
+     "fill": {
+      "type": "boolean",
+      "description": "Emit empty buckets too"
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_coordinated_activity",
+   "title": "Several traders hitting one token (computed live)",
+   "description": "Are several traders piling into the same coin at once — a coordination and herding signal computed live. Use when the question is whether a move looks coordinated or organic; for a plain list of tokens with 3+ buyers in a window use stalkchain_fomo_multi_trader_entries. Which tokens several DISTINCT tracked traders bought (or sold) inside a window. Computed from the live alert firehose (125 credits), because the provider's /v2/tokens/activity board stopped updating on 2026-08-23 and its upstream now times out. The provider board is still attempted with a short 8 s budget and appended as `providerBoard` when it answers. Same output shape as stalkchain_fomo_multi_trader_entries.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "side": {
+      "type": "string",
+      "enum": [
+       "buy",
+       "sell"
+      ]
+     },
+     "minTraders": {
+      "type": "integer",
+      "minimum": 2,
+      "description": "Default 3"
+     },
+     "windowMinutes": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 1440,
+      "description": "Default 60"
+     },
+     "chain": {
+      "type": "string"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_theses_recent",
+   "title": "Recent theses across all coins",
+   "description": "The newest written calls and trade reasoning across every coin. Use when no specific coin or trader is named — for one coin use stalkchain_fomo_theses_for_token, for one person use stalkchain_fomo_theses_by_trader. The global feed of written reasoning: text, handle, userId, token {symbol,address}, chain, equity (position size), tradeUsd, isDev, ts, realized/unrealized PnL. This feed carries equity/PnL but NOT likes. sort=recent|equity|pnl; minEquity filters to theses backed by big positions (e.g. 100000). chain=robinhood is the largest share. Every thesis call costs 1,250 credits per page (5x a normal call). Results cache 10 min. Great for narrative detection: many theses converging on one coin.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "chain": {
+      "type": "string",
+      "description": "robinhood|solana|base|bsc|eth or raw chainId"
+     },
+     "sort": {
+      "type": "string",
+      "enum": [
+       "recent",
+       "equity",
+       "pnl"
+      ]
+     },
+     "minEquity": {
+      "type": "number",
+      "description": "Only theses whose author holds at least this much USD in the coin"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_theses_for_token",
+   "title": "Theses written about one token",
+   "description": "What have people written and said about THIS coin — the calls, takes and reasoning posted on one token. The whole thesis history on a coin: text, handle, userId, likes, replies, isDev, ts. Carries likes but NOT equity. sort=likes = what the crowd agreed with; sort=recent = newest; minLikes filters. pages=2..10 walks further back (~95 theses/page, 1,250 credits PER PAGE, always re-pulled live). Every thesis call costs 1,250 credits per page (5x a normal call). Results cache 10 min. available:false until the coin has data.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address / mint"
+     },
+     "sort": {
+      "type": "string",
+      "enum": [
+       "likes",
+       "recent",
+       "pnl"
+      ]
+     },
+     "network": {
+      "type": "string",
+      "enum": [
+       "sol",
+       "bnb",
+       "base",
+       "eth"
+      ]
+     },
+     "minLikes": {
+      "type": "integer",
+      "minimum": 0
+     },
+     "pages": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Default 1. Each extra page = +1,250 credits."
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_theses_by_trader",
+   "title": "Theses written by one trader",
+   "description": "What has this trader been writing, posting, saying or calling lately — their written posts and calls, not their trades (for trades use stalkchain_fomo_trader_swaps) — their written calls, takes and reasoning, newest first. Use to read why they entered before copying them. Every thesis by one trader, newest first, each with likes, replies, equity and realized/unrealized PnL on that coin. sort=likes|recent|equity|pnl. Every thesis call costs 1,250 credits per page (5x a normal call). Results cache 10 min. Use to read WHY a trader entered a position before copying them.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Handle or userId"
+     },
+     "tokenAddress": {
+      "type": "string",
+      "description": "Only this trader's theses about one token"
+     },
+     "chain": {
+      "type": "string"
+     },
+     "sort": {
+      "type": "string",
+      "enum": [
+       "likes",
+       "recent",
+       "equity",
+       "pnl"
+      ]
+     },
+     "minEquity": {
+      "type": "number"
+     },
+     "minLikes": {
+      "type": "integer"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trade_detail",
+   "title": "One trade in full (swaps, transfers, entry/exit, PnL)",
+   "description": "Break down one single trade in full — what actually happened inside this position. Takes a tradeId. The individual swaps and transfers behind a position, avgEntryPrice/avgExitPrice, realizedPnlUsd, isDev, timestamps; live answers (source='live') add current price, liquidity, status and the trader's thesis + likes. tradeIds come from positions, spotlight, alerts (tradeId field) and devs. 250 credits. Use swaps[].humanUsdAmountIn to get the TRUE size of a buy (alert usdValue on a buy is the whole position mark, not the fill).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "tradeId": {
+      "type": "string",
+      "minLength": 1
+     },
+     "trader": {
+      "type": "string",
+      "description": "Handle or userId of the trader (alerts carry userId). Enables a fallback: if the provider's trade endpoint times out, the position row and its fills are assembled from /positions and /swaps instead."
+     }
+    },
+    "required": [
+     "tradeId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trade_comments",
+   "title": "Thesis thread (comments) on one trade",
+   "description": "What did people say in the replies on this trade — the comment thread under one trade. Takes a tradeId. Every comment: every comment: text, author userId (resolve with stalkchain_fomo_resolve_trader if needed), likes, parentId/isReply (rebuild the thread), olderThesisCount/newerThesisCount (did the trader change their mind), links. 250 credits.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "tradeId": {
+      "type": "string",
+      "minLength": 1
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+     }
+    },
+    "required": [
+     "tradeId"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_alerts",
+   "title": "Activity firehose (buys, sells, theses, ...) - REST",
+   "description": "What is hitting the live feed right now — the raw activity firehose of buys and sells as they happen. For whether several traders are converging on ONE coin, use stalkchain_fomo_coordinated_activity. Newest-first feed of every buy/sell/thesis/transfer/listing/perp/milestone/recap, 125 credits per call (100 items ~ 10 minutes of activity). Each: alertType, source (feed|push), eventId (dedupe key), userId, tradeId, trader (handle), token, tokenAddress, chainId, chain, usdValue, text, ts. MONEY CAVEAT: on a BUY usdValue is the POSITION mark after the fill (not the buy size); on a SELL it is signed realized PnL; use tradeUsd when present or stalkchain_fomo_trade_detail for the fill size. Server filters: type, chain, since (ISO or unix; the API returns at most the newest 100 matching items, so a long window is not fully covered - narrow by type/chain). Local filters: trader, tokenAddress, minUsd. For live data use stalkchain_fomo_watch_stream.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "type": {
+      "type": "string",
+      "description": "One of buy|sell|thesis|transfer|perp|listing|milestone|recap|whale|price|trade|follow"
+     },
+     "chain": {
+      "type": "string",
+      "description": "robinhood|solana|base|bsc|eth|monad|hyperliquid or raw chainId"
+     },
+     "since": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "ISO timestamp or unix seconds/millis; returns alerts after this"
+     },
+     "trader": {
+      "type": "string",
+      "description": "Local filter by handle or userId"
+     },
+     "tokenAddress": {
+      "type": "string",
+      "description": "Local filter by token contract (or symbol)"
+     },
+     "minUsd": {
+      "type": "number",
+      "description": "Local filter on |usdValue|"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_watch_stream",
+   "title": "Sample the live WebSocket feed for N seconds",
+   "description": "Opens the upstream alerts WebSocket (/ws/alerts (app feed, every plan; free keys realtime for 7 days then 15s delayed) or /ws/trades) (on-chain, ~15s ahead, Growth/Scale only), applies server-side filters, collects events for up to durationSeconds (max 120) or until maxEvents, then returns them. Streams cost 0 credits. Alerts carry eventId/userId/tradeId/tokenAddress/chain/usdValue/text; on-chain trades carry txHash, block, real fill usdValue, trader {wallet, handle}. Use for 'what is happening right now', to confirm a trader's live activity, or to watch a token. On connect the server replays recent matching alerts (flagged replay:true); they are included by default so a short sample is never empty - set includeReplay=false for strictly-live events.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "stream": {
+      "type": "string",
+      "enum": [
+       "alerts",
+       "trades"
+      ],
+      "description": "Default alerts"
+     },
+     "durationSeconds": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 120,
+      "description": "Default 20"
+     },
+     "maxEvents": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500,
+      "description": "Stop early after this many events (default 50)"
+     },
+     "trader": {
+      "type": "string",
+      "description": "Handle (alerts) or handle/wallet (trades)"
+     },
+     "token": {
+      "type": "string",
+      "description": "Symbol or contract address"
+     },
+     "chain": {
+      "type": "string",
+      "description": "robinhood|solana|base|bsc|eth|monad|hyperliquid (trades: robinhood|solana only)"
+     },
+     "type": {
+      "type": "string",
+      "description": "alerts only: buy|sell|thesis|perp|whale|price|trade"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "feed",
+       "push"
+      ],
+      "description": "alerts only"
+     },
+     "side": {
+      "type": "string",
+      "enum": [
+       "buy",
+       "sell"
+      ],
+      "description": "trades only"
+     },
+     "minUsd": {
+      "type": "number",
+      "description": "trades only: minimum fill size in USD"
+     },
+     "includeReplay": {
+      "type": "boolean",
+      "description": "Default true. false = drop the replay of recent history sent on connect and keep only live events"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_kol_holders",
+   "title": "How many / which tracked traders (KOLs) hold a token",
+   "description": "How many tracked traders and KOLs hold this token, and what share of all holders is smart money. Answers 'do the KOLs have bags in this', 'is smart money in this ticker'. Use for who HOLDS it now; for who has been SELLING use stalkchain_fomo_kol_sell_pressure. Calls /token/{address}/holders (tracked FOMO traders holding it, by USD value) and /v2/token/{address}/stats (total holders, top10HoldersPercent, 24h flow). Returns trackedHolderCount, trackedValueUsd, trackedShareOfHoldersPct (tracked / total holders), concentration, and the top holders. Percentage of SUPPLY is not derivable (the provider exposes no supply); percentage of holders is. ~500 credits (250 without stats).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "chain": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "Chain name or networkId; only needed for tokens outside the provider's directory"
+     },
+     "includeStats": {
+      "type": "boolean",
+      "description": "Default true"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Top holders to list (default 20)"
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_multi_trader_entries",
+   "title": "Tokens several tracked traders entered in the same window (live)",
+   "description": "Which tokens did several tracked traders buy in the same window. Answers 'which coins did 3+ traders ape into in the last hour' / the polling form of 'notify me when three traders enter the same token'. Pulls /v2/alerts (type=buy or sell, since=now-window, 125 credits) and groups by token, counting DISTINCT traders (by userId). Optionally also samples the live WebSocket for watchSeconds to catch entries happening right now (0 credits). Returns tokens with >= minTraders, their traders, first/last entry time, chain. Coverage: one REST page is 100 alerts (~10 min of all activity, longer when filtered by type/chain); the response says exactly which time range was covered, so shrink the window or filter by chain if truncated. usdValue on buys is the position mark, not the buy size.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "windowMinutes": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 1440,
+      "description": "Look-back window (default 60)"
+     },
+     "minTraders": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 50,
+      "description": "Default 3"
+     },
+     "side": {
+      "type": "string",
+      "enum": [
+       "buy",
+       "sell"
+      ],
+      "description": "Default buy"
+     },
+     "chain": {
+      "type": "string",
+      "description": "robinhood|solana|base|bsc|eth|monad or chainId"
+     },
+     "watchSeconds": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 120,
+      "description": "Also listen to the live stream this long (default 0)"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "description": "Max tokens to return (default 20)"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_kol_sell_pressure",
+   "title": "Share of tracked holders that sold a token recently",
+   "description": "Are the KOLs dumping this token. What share of the tracked holders have sold or exited recently, who sold, and who is still holding. Use when asked about selling, dumping, exiting or distribution; for who currently holds it use stalkchain_fomo_kol_holders. Combines /token/{address}/holders (current tracked holders) with /v2/alerts?type=sell (recent sell events, filtered to this token). A trader who sold EVERYTHING is no longer in the holder list, so the denominator is currentHolders + fullyExitedSellers. Returns sellersPct, whether thresholdPercent was crossed, who sold (with realized PnL from the alert), and who still holds. ~375 credits. Coverage is bounded by the alert ring (100 sells per call); the response states the time range actually covered.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "windowMinutes": {
+      "type": "number",
+      "minimum": 5,
+      "maximum": 1440,
+      "description": "Look-back (default 1440 = 24h). Coverage is bounded by the newest 100 sell alerts; the response states the range actually covered."
+     },
+     "thresholdPercent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Alert threshold (default 10)"
+     },
+     "chain": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_analyze_token",
+   "title": "One-call token analysis (flow, holders, devs, theses)",
+   "description": "Full research writeup on one COIN in a single call — the memo for a token, not a person (for a person use stalkchain_fomo_trader_report). Everything about one token in a single call — the default door for 'tell me about this coin', 'is this worth buying', 'research this token'. Prefer this over chaining stalkchain_fomo_token_stats + stalkchain_fomo_token_holders + stalkchain_fomo_token_devs, which costs more and tells you less. Research memo covering buy/sell flow over 5m/1h/4h/24h, total holders + top10 concentration, tracked smart-money holders, deployer/insider positions with rug flags, and (optional) the most-liked theses explaining WHY traders are in. Costs ~750 credits (stats+holders+devs), +1,250 with includeTheses. Pass chain for tokens outside the provider's directory. For a trending scan use stalkchain_fomo_trending_analysis.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "chain": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "Chain name or networkId; only needed for tokens outside the provider's directory"
+     },
+     "includeTheses": {
+      "type": "boolean",
+      "description": "Add most-liked theses (+1,250 credits)"
+     },
+     "includeDevs": {
+      "type": "boolean",
+      "description": "Default true"
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trending_analysis",
+   "title": "Find and analyze trending / graduated tokens",
+   "description": "Find what is trending right now and analyse it in one step. Use when no specific token is named and the ask is to go find something; when the user already has a coin, use stalkchain_fomo_analyze_token. Reads a token board (trending | graduated | most-held) then runs stalkchain_fomo_analyze_token on the top N (default 3, max 5). Cost: 250 + ~750 per token (+1,250 per token with includeTheses) - a 5-token scan with theses is ~10,250 credits, so keep N small on free keys. Filter by chain/marketCap to focus.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "board": {
+      "type": "string",
+      "enum": [
+       "trending",
+       "graduated",
+       "most-held"
+      ],
+      "description": "Default trending"
+     },
+     "topN": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Default 3"
+     },
+     "chain": {
+      "type": "string",
+      "description": "Only tokens whose board 'network' matches this name/id"
+     },
+     "maxMarketCapUsd": {
+      "type": "number",
+      "description": "Skip tokens above this market cap (find early ones)"
+     },
+     "includeTheses": {
+      "type": "boolean"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_top_traders_for_tokens",
+   "title": "Top traders holding tokens X, Y, Z",
+   "description": "Who are the best traders holding these several tokens. Use for 2-5 tokens at once; for one token's holders use stalkchain_fomo_kol_holders. For each token (max 5) reads the tracked holders, unions them, and joins the leaderboard for the chosen window to attach rank and pnlUsd. Ranked by number of the given tokens held, then leaderboard PnL, then value held. 250 credits per token + 250 for the leaderboard. Wallets come from the leaderboard row when the trader is on it; otherwise use stalkchain_fomo_search (250) rather than stalkchain_fomo_resolve_trader (2,500).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "tokens": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 3
+      },
+      "minItems": 1,
+      "maxItems": 5,
+      "description": "Token contract addresses"
+     },
+     "window": {
+      "type": "string",
+      "enum": [
+       "24h",
+       "7d",
+       "30d",
+       "all"
+      ],
+      "description": "Leaderboard window to rank by (default 7d)"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Default 25"
+     }
+    },
+    "required": [
+     "tokens"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_token_launch_research",
+   "title": "Who launched this token, and when (best effort)",
+   "description": "Answers 'who launched this coin and when?' from what the provider exposes: /v2/token/{address}/devs gives the deployer/insider handles, wallets, positions and their own thesis; the dev's tradeId is then opened with /v2/trades/{tradeId} to read when the dev's position was opened (a proxy for launch time) and whether they have sold. Adds /stats for age context. ~500-1,000 credits. If the provider knows no dev, the result says so; an on-chain deploy timestamp needs a chain RPC/indexer (not in this provider).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "chain": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "Chain name or networkId; only needed for tokens outside the provider's directory"
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_token_snapshot",
+   "title": "Compact token snapshot (store it, diff later)",
+   "description": "Answers 'how do this token's holders change over time' - the provider has no history endpoint, so take snapshots and diff them with stalkchain_fomo_compare_snapshots. Returns {capturedAt, priceUsd, totalHolders, top10HoldersPercent, trackedHolders[{handle, amount, valueUsd}], flow24h}. ~500 credits. Save the JSON in your own store (file, DB) and call again later.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "address": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Token contract address (EVM 0x... or Solana mint)"
+     },
+     "chain": {
+      "type": [
+       "string",
+       "number"
+      ],
+      "description": "Chain name or networkId; only needed for tokens outside the provider's directory"
+     },
+     "holdersLimit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "description": "Default 50"
+     }
+    },
+    "required": [
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_compare_snapshots",
+   "title": "Diff two token snapshots",
+   "description": "Pure local diff of two stalkchain_fomo_token_snapshot outputs: new tracked holders, exited holders, who increased/decreased their bag, change in total holders, top10 concentration and price. No API call.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "before": {
+      "type": "object",
+      "properties": {
+       "capturedAt": {
+        "type": "string"
+       },
+       "totalHolders": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "top10HoldersPercent": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "priceUsd": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "trackedHolders": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "handle": {
+           "type": "string"
+          },
+          "amount": {
+           "type": "number"
+          },
+          "valueUsd": {
+           "type": "number"
+          }
+         },
+         "required": [
+          "handle"
+         ],
+         "additionalProperties": false
+        }
+       }
+      },
+      "required": [
+       "trackedHolders"
+      ],
+      "additionalProperties": false
+     },
+     "after": {
+      "$ref": "#/properties/before"
+     }
+    },
+    "required": [
+     "before",
+     "after"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "stalkchain_fomo_trader_report",
+   "title": "Research a trader before following them",
+   "description": "Should I follow or copy this trader. START HERE for any question about whether a trader is worth trusting, copying or following — it replaces four separate calls. One-call due diligence: identity + wallets + PnL windows (cheap via search when you pass a HANDLE; a userId cannot be searched and forces the 2,500-credit live profile, so prefer the handle from the leaderboard row), or full live profile with full=true at 2,500 credits), the provider's spotlight (best trades/theses), live portfolio (total value, top holdings, concentration), and a sample of closed positions (win rate, realized PnL, best/worst). Optional most-liked theses (+1,250). ~1,000 credits with full=false. Every metric states its sample size; missing data is null, never 0.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "trader": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Handle or userId"
+     },
+     "full": {
+      "type": "boolean",
+      "description": "Use /v2/users/{handle} (2,500 credits) for the ~35-field live profile instead of search (250)"
+     },
+     "includeTheses": {
+      "type": "boolean",
+      "description": "Add the trader's most-liked theses (+1,250)"
+     },
+     "closedSample": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 200,
+      "description": "Closed positions to sample (default 100)"
+     }
+    },
+    "required": [
+     "trader"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_fomo_compare_traders",
+   "title": "Compare 2-4 traders on comparable metrics",
+   "description": "Side-by-side of PnL (per window when available), volume, trade count, followers, account age, verified flag and wallets. Uses search (250 each) by default; full=true uses the live profile (2,500 each) which adds pnl per window, swapCount, averageHoldTimeSeconds. Fields the provider did not return are null - never treat null as 0.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "traders": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 1
+      },
+      "minItems": 2,
+      "maxItems": 4
+     },
+     "full": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "traders"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_tokens",
+   "title": "StonkFun: list / search tokens with market data",
+   "description": "List or search the tokens on StonkFun with their live market data. Use to browse or find a mint; for one token in depth use stonk_token_report. On StonkFun (Solana launchpad, tokenized-stock and stablecoin quote pairs). Every token with a live pool: mint, name, symbol, quote pair, creator, launchpad (raydium|launchlab|pump), mode (standard|reward), market {priceUsd, marketCapUsd, fdvUsd, volume24hUsd, priceChange24h, peakMarketCapUsd}, graduation status; reward (V3) tokens add transferFee.bps and flywheel.active. sort=marketCap|newest|volume. Free, cached 30 s. Use q to search name/symbol/mint.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "q": {
+      "type": "string",
+      "description": "Search name, symbol or mint"
+     },
+     "sort": {
+      "type": "string",
+      "enum": [
+       "marketCap",
+       "newest",
+       "volume"
+      ]
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "reward"
+      ],
+      "description": "Fee model"
+     },
+     "status": {
+      "type": "string",
+      "description": "Graduation status filter, e.g. graduated"
+     },
+     "quoteMint": {
+      "type": "string",
+      "description": "Only tokens paired with this quote mint (see stonk_pairs)"
+     },
+     "category": {
+      "type": "string",
+      "description": "Pair category, e.g. xstock"
+     },
+     "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Page number, default 1"
+     },
+     "pageSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "1-100, default 25"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_token",
+   "title": "StonkFun: one token with launch record",
+   "description": "One StonkFun token with its launch record — market data plus who created it and how. For everything at once (burns, fees, rewards, backing) prefer stonk_token_report. Live market data plus the launch record (creator, launchpad, mode, quote, start/target market cap, createdAt) when StonkFun launched it. Free, cached 30 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mint": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     }
+    },
+    "required": [
+     "mint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_token_burns",
+   "title": "StonkFun: token burn history",
+   "description": "How much of this token has been burned — burn history and totals for one StonkFun mint. Answers 'what has been burned', 'how much supply is destroyed'. Totals and recent burns of this token by the platform fee sweep (buybacks and burns are the platform's deflation mechanism). Free, cached 60 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mint": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "required": [
+     "mint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_token_rewards",
+   "title": "StonkFun: holder reward distributions",
+   "description": "Holder reward payouts for this token — what has been distributed to holders. distribution totals for a reward coin (Token-2022 transfer tax paid to holders). Standard launches answer mode 'standard' with rewards null. Free, cached 60 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mint": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "required": [
+     "mint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_token_airdrop",
+   "title": "StonkFun: launch airdrop",
+   "description": "Did this token launch with an airdrop, and to whom. the airdrop the token launched with, if any - share of supply carved out, wallet count, snapshot source. airdrop null = launched without one (most tokens). Free, cached 60 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mint": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "required": [
+     "mint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_token_fees",
+   "title": "StonkFun: creator claimable fees",
+   "description": "How much can the creator still claim — unclaimed trading fees piling up for the token creator. trading fees currently claimable by the creator, in base and quote token, no wallet needed. Reward coins, pump and LaunchLab launches answer claimable null with a reason. Free, cached 60 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mint": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "required": [
+     "mint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_token_backing",
+   "title": "StonkFun: USD locked behind a pump launch",
+   "description": "How much real USD is locked behind this pump launch — the permanent backing. USD permanently locked behind a PUMP-launched token. Any other launchpad answers 400 (backing does not exist there) - check launchpad via stonk_token first. Free, cached 60 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mint": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     }
+    },
+    "required": [
+     "mint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_launches",
+   "title": "StonkFun: launch ledger (by creator, mode, time)",
+   "description": "Which tokens were launched on StonkFun, and by whom — the launch ledger, filterable by creator or time. Newest first: mint, pool, name, symbol, creator wallet, quote, launchpad, mode, transferFee, start/target market cap, createdAt. creator= finds everything one wallet launched (serial-launcher check); since= ISO time. Free, cached 30 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "creator": {
+      "type": "string",
+      "description": "Creator wallet address"
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "reward"
+      ]
+     },
+     "since": {
+      "type": "string",
+      "description": "ISO timestamp"
+     },
+     "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Page number, default 1"
+     },
+     "pageSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "1-100, default 25"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_launch_status",
+   "title": "StonkFun: status of a launch by payment signature",
+   "description": "Did my launch go through — check the status of a launch using its payment signature. poll after a 'processing' launch until status is 'completed'. Free, cached 5 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "paymentSignature": {
+      "type": "string",
+      "minLength": 32
+     }
+    },
+    "required": [
+     "paymentSignature"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_pairs",
+   "title": "StonkFun: launchable quote pairs (xStocks, stables)",
+   "description": "Which quote tokens can I launch against — the available pairs (xStocks, stablecoins) for a new StonkFun launch. quote tokens a launch can pair against - mint, symbol, name, decimals, category (xstock etc.), tokenProgram, launchable (platform rule) and launchLabReady (Raydium GlobalConfig exists). Free, cached 10 min.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "category": {
+      "type": "string"
+     },
+     "launchable": {
+      "type": "boolean"
+     },
+     "launchLabReady": {
+      "type": "boolean"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_launchlab_pricing",
+   "title": "StonkFun: curve pricing to build a LaunchLab launch yourself",
+   "description": "Bonding curve pricing for building a LaunchLab launch yourself — the raw curve parameters. the raw totalFundRaisingB, resulting market caps, virtual reserves and create-instruction constants needed to construct a Raydium LaunchLab launch that StonkFun will adopt. Read-only; the human signs. Free, cached 5 min.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "quoteMint": {
+      "type": "string",
+      "minLength": 32,
+      "description": "Quote mint from stonk_pairs"
+     }
+    },
+    "required": [
+     "quoteMint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_stats",
+   "title": "StonkFun: platform stats and config",
+   "description": "StonkFun platform totals and config — how many tokens, how many graduated, how many are close. For money made and burned use stonk_revenue. totals (tokens, graduated, aboutToGraduate, rewardLaunches, total market cap, 24h volume), revenue and burn totals, and config switches (graduation thresholds, which launch paths are enabled). Free, cached 60 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_revenue",
+   "title": "StonkFun: platform revenue, buybacks, burns",
+   "description": "How much revenue has the StonkFun PLATFORM made, bought back and burned — platform-wide economics across all tokens, not one mint (for a single token's burns use stonk_token_burns). Fee revenue, buybacks and burns by source: fee revenue, buybacks, burns by source; the daily USD series keyed by UTC day (dailyRevenue, dailyHoldersRevenue, dailyProtocolRevenue). Free, cached 60 s / 10 min.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "history": {
+      "type": "boolean",
+      "description": "Also return the daily series"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_rewards",
+   "title": "StonkFun: rewards overview",
+   "description": "Platform-wide reward payouts across every reward coin. For one token's rewards use stonk_token_rewards. lifetime payout totals per reward coin plus recent distribution transactions. Free, cached 60 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stonk_token_report",
+   "title": "StonkFun token report (+ tracked FOMO traders holding it)",
+   "description": "Everything about one StonkFun mint in a single call — the default door for 'tell me about this stonkfun token'. Prefer this over chaining stonk_token + stonk_token_burns + stonk_token_fees. One call covering token + launch record, burns, holder rewards, airdrop, creator fees, backing (pump launches), the creator's other launches, and optionally which tracked FOMO traders hold it (stalkchain_fomo_kol_holders, 500 credits). Flags: reward-mode transfer tax, creator with many launches, fees piling up unclaimed, price far below peak. Six upstream calls, so 1,500 credits before the optional tracked-holder lookup.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mint": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "includeTrackedHolders": {
+      "type": "boolean",
+      "description": "Also query the provider's tracked holders for this mint (+500 credits)"
+     }
+    },
+    "required": [
+     "mint"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_onchain",
+   "title": "Token on-chain intel (Solana)",
+   "description": "Everything about a Solana token that the tracked-trader data cannot see: TOTAL on-chain holder count (not just holders who use the app), circulating supply, how much of the liquidity pool is burned, whether mint and freeze authority are still live, top-10 concentration, the developer's own holding, sniper and insider share at launch, a risk score with named risks, and whether it is already flagged rugged. Also price, market cap, liquidity, 24h flow and price change across 12 windows. Use this before stalkchain_fomo_analyze_token when the question is 'is this token safe / real', and alongside it when the question is 'who holds it'.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     }
+    },
+    "required": [
+     "token"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_deployer",
+   "title": "Who deployed this token, and what else they launched",
+   "description": "Resolves the wallet that deployed a Solana token, Answers 'has the dev rugged before', 'what else did this deployer launch', 'is the creator a serial rugger'. then lists every other token that wallet has launched, with each one's current liquidity, market cap and LP burn, plus how many of them graduated. This is the rug-history check: a deployer with twenty dead tokens and no graduations is a very different bet from one with a single live launch. Answers 'who made this coin' and 'has this dev done it before'. Pass a mint to look up its deployer, or pass a wallet directly to inspect that deployer.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Token mint; its deployer is resolved first"
+     },
+     "deployer": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Skip the lookup and inspect this deployer wallet directly"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_early_buyers",
+   "title": "First buyers, snipers and bundlers",
+   "description": "The first wallets into a Solana token, when each bought, whether they have already sold, and what they made or lost. Adds bundler concentration: how much supply was taken by coordinated bundles at launch and how much of it they still hold. Answers 'was this sniped', 'did the early money already exit', and 'is the float real'. A token where every first buyer has sold and bundlers still hold a big share is a different risk from one where early buyers are still in.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "How many early buyers to return (default 20)"
+     }
+    },
+    "required": [
+     "token"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_pnl_leaders",
+   "title": "Biggest winners and losers on a token",
+   "description": "Who made and who lost the most money on THIS ONE token — the winners and losers table for a single coin. For the platform-wide trader rich list use stalkchain_fomo_leaderboard instead. The wallets with the largest realised plus unrealised PnL on one Solana token, with how much each put in, what they took out, and whether they are still holding. This is measured on chain, so it covers every wallet, not only tracked traders. Use it to find who is actually making money on a name, and to spot a single wallet sitting on most of the profit.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "How many wallets to return (default 20)"
+     }
+    },
+    "required": [
+     "token"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_wallet_pnl",
+   "title": "On-chain PnL for any Solana wallet",
+   "description": "Profit and loss for a raw Solana wallet address, measured on chain. Use when given an ADDRESS rather than a handle; for a handle use stalkchain_fomo_search. For the winners on one token use stalkchain_token_pnl_leaders. Realised and unrealised PnL for any Solana wallet, with win rate, total invested, average buy size, and its current token positions by value. Works for wallets that are not tracked traders, so it is the way to check a wallet you found in holders, first buyers or a deployer lookup. Pair it with stalkchain_fomo_resolve_trader when the wallet does belong to a known trader.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "wallet": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana wallet address"
+     },
+     "includeHoldings": {
+      "type": "boolean",
+      "description": "Also return current token balances by value (default true)"
+     }
+    },
+    "required": [
+     "wallet"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_exit_check",
+   "title": "Could I actually sell this, and at what price",
+   "description": "Quotes a real route for selling a given USD size of a Solana token into USDC, Answers 'can I actually get out of this', 'what is the real slippage', 'will it fill'. and reports what you would actually receive, the price impact, and which venues the route goes through. This is the exit test: liquidity numbers flatter a token, an executable quote does not. Use it before trusting a position size, and to sanity-check a token that looks liquid but cannot absorb a sell. Returns the round trip too, so a token that is cheap to buy and ruinous to sell stands out.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     },
+     "usd": {
+      "type": "number",
+      "minimum": 10,
+      "maximum": 1000000,
+      "description": "Sell size in USD to quote (default 10,000)"
+     }
+    },
+    "required": [
+     "token"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_quality",
+   "title": "Is this token real, and is its volume real",
+   "description": "A quality read on a Solana token: an organic score with its label, whether the token is verified, its tags, and an audit covering mint and freeze authority, top-holder concentration, the developer's own balance and how many tokens that developer has minted before. Crucially it separates organic volume from total volume across four windows, so wash trading shows up as a low organic share while raw volume looks healthy. Use it to filter a discovery list before spending credits on deeper tools.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "token": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 64,
+      "description": "Solana token mint address"
+     }
+    },
+    "required": [
+     "token"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_prices",
+   "title": "USD price for up to 50 mints in one call",
+   "description": "Current USD price, 24h change and pool liquidity for up to 50 Solana mints in a single call. Use it to value a wallet's holdings, to price a watchlist, or to check several candidates before picking one to research. Far cheaper than calling a per-token tool repeatedly.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "tokens": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 32,
+       "maxLength": 64,
+       "description": "Solana token mint address"
+      },
+      "minItems": 1,
+      "maxItems": 50,
+      "description": "Mint addresses, up to 50"
+     }
+    },
+    "required": [
+     "tokens"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_wallet_portfolio",
+   "title": "What is this wallet holding, across every chain",
+   "description": "What is in this wallet right now, and what is it worth, across every chain at once. Answers 'what does this address hold', 'how big is this wallet', 'where is their money'. Works for ANY address on robinhood, ethereum, base, bsc, monad, hyperliquid, solana — unlike stalkchain_fomo_trader_balances, which only covers traders the platform already tracks. Returns every token with its amount, USD price and USD value, a total, and a per-chain breakdown so you can see which chain the money actually sits on. Dust with no balance is dropped. A chain the provider cannot answer for is named in failedChains rather than silently missing. The provider takes five chains per call, so asking for all seven costs two calls.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "wallet": {
+      "type": "string",
+      "minLength": 26,
+      "description": "Wallet address (0x… for EVM chains, base58 for Solana)"
+     },
+     "chains": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "robinhood",
+        "ethereum",
+        "base",
+        "bsc",
+        "monad",
+        "hyperliquid",
+        "solana"
+       ]
+      },
+      "minItems": 1,
+      "maxItems": 7,
+      "description": "Chains to check (default: all). One of robinhood, ethereum, base, bsc, monad, hyperliquid, solana"
+     },
+     "minValueUsd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Hide holdings worth less than this, to cut noise"
+     }
+    },
+    "required": [
+     "wallet"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_wallet_transfers",
+   "title": "Every transfer in and out of a wallet",
+   "description": "What has this wallet actually been doing — the buys, sells and transfers in and out, newest first, with timestamps and USD-denominated amounts where the asset is known. Answers 'what has this address been up to', 'when did they last move', 'who funded this wallet'. EVM chains only (robinhood, ethereum, base, bsc, monad, hyperliquid); for Solana wallet activity use stalkchain_wallet_pnl. Both directions are fetched, so a funding transfer in shows up alongside the outbound trades. Two calls per request.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "wallet": {
+      "type": "string",
+      "minLength": 26,
+      "description": "EVM wallet address (0x…)"
+     },
+     "chain": {
+      "type": "string",
+      "enum": [
+       "robinhood",
+       "ethereum",
+       "base",
+       "bsc",
+       "monad",
+       "hyperliquid"
+      ],
+      "description": "Which chain. One of robinhood, ethereum, base, bsc, monad, hyperliquid"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Transfers to return (default 25)"
+     },
+     "order": {
+      "type": "string",
+      "enum": [
+       "asc",
+       "desc"
+      ],
+      "description": "desc = newest first (default); asc = oldest first, to see how a wallet started"
+     },
+     "categories": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "external",
+        "internal",
+        "erc20",
+        "erc721",
+        "erc1155"
+       ]
+      },
+      "description": "Transfer kinds (default external + erc20)"
+     }
+    },
+    "required": [
+     "wallet",
+     "chain"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_wallet_age",
+   "title": "How old and how active is this wallet",
+   "description": "How old is this wallet and how much has it actually done — first transaction date, age in days, and lifetime outbound transaction count, per chain. Answers 'is this a fresh wallet', 'when was this address created', 'is this a real trader or an hour-old burner'. A wallet funded this morning behaving like a whale is the single clearest warning sign on an EVM chain, and this is how you see it. EVM chains only; for Solana use stalkchain_token_early_buyers and stalkchain_wallet_pnl. Two calls per chain.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "wallet": {
+      "type": "string",
+      "minLength": 26,
+      "description": "EVM wallet address (0x…)"
+     },
+     "chains": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "robinhood",
+        "ethereum",
+        "base",
+        "bsc",
+        "monad",
+        "hyperliquid"
+       ]
+      },
+      "minItems": 1,
+      "maxItems": 6,
+      "description": "Chains to check (default: all EVM). One of robinhood, ethereum, base, bsc, monad, hyperliquid"
+     }
+    },
+    "required": [
+     "wallet"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_prices_multichain",
+   "title": "USD prices across chains, by address or ticker",
+   "description": "Current USD price for tokens on any chain, by contract address, or by ticker for the majors. Answers 'what is this worth', 'price of ETH and BNB', 'value these contracts'. Use addresses when you have them and symbols when you do not. Covers every chain the product serves, unlike stalkchain_token_prices which is Solana-only. Up to 25 tokens per call.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "tokens": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "chain": {
+         "type": "string",
+         "enum": [
+          "robinhood",
+          "ethereum",
+          "base",
+          "bsc",
+          "monad",
+          "hyperliquid",
+          "solana"
+         ]
+        },
+        "address": {
+         "type": "string",
+         "minLength": 26
+        }
+       },
+       "required": [
+        "chain",
+        "address"
+       ],
+       "additionalProperties": false
+      },
+      "maxItems": 25,
+      "description": "Contract addresses with their chain"
+     },
+     "symbols": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 1,
+       "maxLength": 12
+      },
+      "maxItems": 25,
+      "description": "Tickers such as ETH, SOL, BNB — for majors, when you have no address"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_price_history",
+   "title": "What was this worth at the time",
+   "description": "A USD price series for one token over a time range. Answers 'what was it worth when they bought', 'how has this moved this week', 'price on that date'. Use it to value an entry or exit against the moment it happened rather than against today. Identify the token by ticker for a major, or by chain plus contract address for anything else.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "symbol": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 12,
+      "description": "Ticker such as ETH — for majors"
+     },
+     "chain": {
+      "type": "string",
+      "enum": [
+       "robinhood",
+       "ethereum",
+       "base",
+       "bsc",
+       "monad",
+       "hyperliquid",
+       "solana"
+      ],
+      "description": "Chain, when identifying by contract address"
+     },
+     "address": {
+      "type": "string",
+      "minLength": 26,
+      "description": "Contract address, when not using a ticker"
+     },
+     "startTime": {
+      "type": "string",
+      "description": "ISO 8601 start, e.g. 2026-09-01T00:00:00Z"
+     },
+     "endTime": {
+      "type": "string",
+      "description": "ISO 8601 end"
+     },
+     "interval": {
+      "type": "string",
+      "enum": [
+       "5m",
+       "1h",
+       "1d"
+      ],
+      "description": "Point spacing (default 1d)"
+     }
+    },
+    "required": [
+     "startTime",
+     "endTime"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_info",
+   "title": "Name, symbol, decimals and price for an EVM token",
+   "description": "What is this contract — name, ticker, decimals, logo and current USD price for a token on any EVM chain the product serves (robinhood, ethereum, base, bsc, monad, hyperliquid). Answers 'what token is this address', 'what is this contract'. Use it to turn a bare contract address into something readable before deciding whether to spend more credits on it. For Solana tokens use stalkchain_token_onchain or stalkchain_token_quality, which go far deeper.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "chain": {
+      "type": "string",
+      "enum": [
+       "robinhood",
+       "ethereum",
+       "base",
+       "bsc",
+       "monad",
+       "hyperliquid"
+      ],
+      "description": "Which chain. One of robinhood, ethereum, base, bsc, monad, hyperliquid"
+     },
+     "address": {
+      "type": "string",
+      "minLength": 26,
+      "description": "Token contract address"
+     }
+    },
+    "required": [
+     "chain",
+     "address"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_chain_health",
+   "title": "Which chain has the money, and how much is dry powder",
+   "description": "Which chain actually has capital on it right now, and how much of that is sitting in stablecoins waiting to be deployed. Answers 'is Base still growing', 'which chain should I be on', 'is there dry powder or is everyone in positions', 'compare the chains'. Covers solana, ethereum, base, bsc, monad, hyperliquid, robinhood. Returns total value locked, total stablecoin supply, and the ratio between them — stablecoin dollars in existence per dollar actually locked in DeFi. A high ratio means capital is sitting idle on that chain; a low one means what is there is already deployed. Nothing else here answers a question about a chain as a whole rather than a token on it.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "chains": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "solana",
+        "ethereum",
+        "base",
+        "bsc",
+        "monad",
+        "hyperliquid",
+        "robinhood"
+       ]
+      },
+      "minItems": 1,
+      "maxItems": 7,
+      "description": "Chains to compare (default: all). One of solana, ethereum, base, bsc, monad, hyperliquid, robinhood"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_token_yields",
+   "title": "Where can I earn on this token",
+   "description": "Where a token can actually be put to work, and what it pays. Answers 'where can I stake this', 'best yield on SOL', 'where do I farm this', 'what APY can I get'. Returns the pools holding it with their APY split into base and reward, how the rate has moved over a week, pool size, and whether the position carries impermanent loss. Ranked by how much money is already in the pool rather than by APY, because the highest rate in any list is almost always a tiny pool or an emission about to end. Pass a symbol, a chain, or both.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "symbol": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20,
+      "description": "Token ticker such as SOL, USDC, ETH. Matches pools containing it, so a pair like SOL-USDC is included."
+     },
+     "chain": {
+      "type": "string",
+      "enum": [
+       "solana",
+       "ethereum",
+       "base",
+       "bsc",
+       "monad",
+       "hyperliquid",
+       "robinhood"
+      ],
+      "description": "Narrow to one chain. One of solana, ethereum, base, bsc, monad, hyperliquid, robinhood"
+     },
+     "minTvlUsd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Ignore pools smaller than this (default 100,000) — small pools show inflated rates"
+     },
+     "stablesOnly": {
+      "type": "boolean",
+      "description": "Only stablecoin pools, for parking money rather than taking price risk"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Pools to return (default 20)"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_protocol_report",
+   "title": "Is this protocol growing, and has it been drained",
+   "description": "What a DeFi protocol holds, which way that is moving, and whether it has ever been exploited. Answers 'is this protocol safe', 'has this been hacked', 'is it growing or dying', 'how big is it'. Returns total value locked with 1-day, 7-day and 30-day change, which chains it runs on, its audit status, and any matching exploit on record with the amount lost. Growth and security in one answer, because they are the same question when deciding whether to put money in.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "protocol": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60,
+      "description": "Protocol name or slug, e.g. jupiter, aave, raydium"
+     }
+    },
+    "required": [
+     "protocol"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_defi_hacks",
+   "title": "What has been exploited, and for how much",
+   "description": "Exploits and rug pulls on record, newest first, with how much was lost and how it was done. Answers 'has this been hacked', 'what happened to that protocol', 'recent exploits on Solana', 'is this chain safe'. Filter by protocol name or by chain. Use it before putting money into something unfamiliar, and to explain a sudden TVL collapse.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60,
+      "description": "Protocol or project name to match"
+     },
+     "chain": {
+      "type": "string",
+      "enum": [
+       "solana",
+       "ethereum",
+       "base",
+       "bsc",
+       "monad",
+       "hyperliquid",
+       "robinhood"
+      ],
+      "description": "Narrow to one chain. One of solana, ethereum, base, bsc, monad, hyperliquid, robinhood"
+     },
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Incidents to return (default 20)"
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_price_confidence",
+   "title": "Price with a confidence score, any chain",
+   "description": "A USD price for a token on any chain, with the provider's own confidence in it. Answers 'what is this worth and can I trust the number'. The confidence is the reason to use this over stalkchain_token_prices or stalkchain_token_prices_multichain: a thin or manipulated market shows up as a low score beside the price, where other sources return a number and leave you to guess. Identify a token as chain:address (solana:MINT, ethereum:0x…) or coingecko:id. Up to 50 at once.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "tokens": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 3,
+       "maxLength": 120
+      },
+      "minItems": 1,
+      "maxItems": 50,
+      "description": "Keys like solana:DezXAZ…, ethereum:0xdAC17…, or coingecko:bonk"
+     }
+    },
+    "required": [
+     "tokens"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_milestone_study",
+   "title": "Of the tokens that hit $X market cap, how many went higher - 1 call per token studied",
+   "description": "Studies a cohort of Solana launches against a market cap milestone and measures what happened after they reached it. Answers 'of the coins that crossed $3M, how many went higher', 'is hitting $3M a signal or a top', 'is $3M rare or routine for a new launch', 'what multiple do the ones that get there reach', 'how often does a token round-trip straight back below the milestone'. Returns how many of the cohort ever crossed, how many made a new high afterwards, how many fell straight back below, and the spread of peak multiples at 1.5x, 2x, 5x and 10x. Two cohorts: 'launches' (default) is every token created in the window including the dead ones, which is the only frame that gives an honest base rate; 'reached' draws from tokens that got near the milestone, which finds far more crossers per call but over-represents the ones that stayed high, so its 'went higher' share is an upper bound. Costs one upstream call per token studied plus a few for the cohort, so start small.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "thresholdUsd": {
+      "type": "number",
+      "minimum": 10000,
+      "maximum": 1000000000,
+      "description": "The market cap milestone (default 3,000,000)"
+     },
+     "cohort": {
+      "type": "string",
+      "enum": [
+       "launches",
+       "reached"
+      ],
+      "description": "'launches' (default) = every token created in the window, the only honest base rate. 'reached' = tokens that got near the milestone, ~7x more crossers per call but biased toward winners."
+     },
+     "daysAgoFrom": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 365,
+      "description": "Cohort start, days ago (default 120)"
+     },
+     "daysAgoTo": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 364,
+      "description": "Cohort end, days ago (default 30). Leave a gap to now so tokens have had time to move."
+     },
+     "sample": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 60,
+      "description": "How many tokens to study (default 25). Each costs one upstream call. Under the 'launches' cohort roughly 1 in 20 crosses $3M, so a small sample measures the base rate but rarely enough crossers for the rest."
+     },
+     "minPeakMultiple": {
+      "type": "number",
+      "minimum": 1,
+      "description": "What counts as 'went higher' (default 1.5x). Do not set this to 1.0: reaching the line requires settling above it, so a later close above it is near-guaranteed and 'went higher' would read ~100% by construction."
+     }
+    },
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_alert_create",
+   "title": "Create a price or smart-money alert",
+   "description": "Set up an alert that notifies the user once, by email or their own webhook (Discord, Slack or Telegram bot URL), when a token crosses a price or when several tracked traders buy it. Kinds: price_above / price_below (needs priceUsd), smart_money_buy (fires when at least minTraders tracked traders, default 2, buy the token within a few minutes). Needs the token's address: resolve a ticker first with stalkchain_fomo_search or stalkchain_token_prices_multichain. Chains: solana, ethereum, base, bsc. Alerts fire once and then switch off; checked about every 5 minutes; up to 20 active per account. Confirm the token, threshold and delivery with the user before calling. Returns the alert and the token's current price, so you can tell the user how far away the threshold is.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "price_above",
+       "price_below",
+       "smart_money_buy"
+      ]
+     },
+     "token": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 64,
+      "description": "Token address (mint on Solana, 0x… on EVM)"
+     },
+     "chain": {
+      "type": "string",
+      "enum": [
+       "solana",
+       "ethereum",
+       "base",
+       "bsc"
+      ],
+      "description": "Default solana, or ethereum for 0x addresses"
+     },
+     "priceUsd": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Threshold in USD, for price_above / price_below"
+     },
+     "minTraders": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 20,
+      "description": "smart_money_buy: how many tracked traders must buy. Default 2"
+     },
+     "channel": {
+      "type": "string",
+      "enum": [
+       "email",
+       "webhook"
+      ],
+      "description": "email (the account's address, default) or webhook"
+     },
+     "webhookUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "https Discord, Slack or Telegram bot webhook URL, when channel is webhook"
+     },
+     "note": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "A short reminder of why the user set it"
+     }
+    },
+    "required": [
+     "kind",
+     "token"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "stalkchain_alert_list",
+   "title": "List your alerts",
+   "description": "The user's alerts: what each watches, how it notifies, whether it is still active or has fired (and when, and why). Use before deleting, or when the user asks what alerts they have.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "stalkchain_alert_delete",
+   "title": "Delete an alert",
+   "description": "Switch off and delete one of the user's alerts by id (from stalkchain_alert_list). Confirm which alert with the user first.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  }
+ ]
+}

@@ -1,0 +1,5 @@
+---
+type: fixed
+---
+
+{"data":{"mint":"GAwhcphCqCv5bKHmCiN4VDdNWfbXJL4npmkc8L3Q9S9H","name":"world wide web","symbol":"www","holdersTotal":7090,"supply":992378615.496111,"lpBurnedPercent":0,"mintAuthorityActive":false,"freezeAuthorityActive":false,"deployer":"FTaeCBK9fhv1rsnx91yAPKLax5RoHvAZb1n8HMb2zu3","createdAt":"2026-10-02T03:24:01.000Z","ageDays":0,"priceUsd":0.004059979498128697,"marketCapUsd":4029036.83,"liquidityUsd":274501.37,"concentration":{"top10Percent":14.8,"devPercent":0},"launch":{"sniperCount":0,"sniperPercent":0,"insiderCount":0,"insiderPercent":0},"risk":{"score":6,"rugged":false,"verified":false,"flags":[{"name":"LP Burned","level":"danger","description":"Allows the owner to remove liquidity at any time."},{"name":"Top 10 Holders","level":"danger","description":"Top 10 holders own more than 14.80% of the total supply."}]},"flow24h":{"buys":3996,"sells":4409,"transactions":8405,"volumeUsd":4164600},"priceChangePercent":{"1m":-0.97,"5m":-3.79,"15m":10.72,"30m":78.55,"1h":3.97,"2h":86.98,"3h":574.4,"4h":574.4,"5h":574.4,"6h":574.4,"12h":574.4,"24h":574.4}},"notes":["Only 0% of the liquidity pool is burned; the rest can be pulled."]}

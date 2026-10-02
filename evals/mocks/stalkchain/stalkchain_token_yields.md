@@ -1,0 +1,5 @@
+---
+type: fixed
+---
+
+{"data":{"matched":1813,"showing":8,"pools":[{"project":"maple","chain":"Ethereum","symbol":"USDC","tvlUsd":2920207676,"apy":5.17757,"apyBase":5.17757,"apyReward":0,"apyChange7dPct":0.01123,"exposure":"single","impermanentLossRisk":"no","isStablecoin":true},{"project":"morpho-blue","chain":"Base","symbol":"SIRLOINUSDC","tvlUsd":443022203,"apy":5.81132,"apyBase":3.0643,"apyReward":2.74702,"apyChange7dPct":0.22441,"exposure":"single","impermanentLossRisk":"no","isStablecoin":true},{"project":"morpho-blue","chain":"Base","symbol":"GTUSDCP","tvlUsd":414842152,"apy":4.43088,"apyBase":4.43088,"apyReward":0,"apyChange7dPct":0.04037,"exposure":"single","impermanentLossRisk":"no","isStablecoin":true},{"project":"morpho-blue","chain":"Base","symbol":"STEAKUSDC","tvlUsd":386462197,"apy":4.42982,"apyBase":4.42982,"apyReward":0,"apyChange7dPct":0.03421,"exposure":"single","impermanentLossRisk":"no","isStablecoin":true},{"project":"morpho-blue","chain":"Base","symbol":"SPARKUSDC","tvlUsd":336212574,"apy":3.9769,"apyBase":3.9769,"apyReward":0,"apyChange7dPct":0.03282,"exposure":"single","impermanentLossRisk":"no","isStablecoin":true}]}}
