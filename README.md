@@ -15,6 +15,7 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 | `token-check` | "Is this coin safe? Is the dev selling?" |
 | `trader-check` | "Should I copy this trader? Compare these three." |
 | `trader-playbook` | "How does this trader actually trade? How long do they hold?" |
+| `universal-trade-review` | "Review this trader’s session through execution, risk, thesis and behavior—with evidence and draft next-window rules." |
 | `smart-money-radar` | "What did the top traders buy in the last hour?" |
 | `whale-watch` | "Any big buys or sells over $50K today?" |
 | `launch-screener` | "Any new launches worth a look today?" |
@@ -26,6 +27,7 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 | `portfolio-review` | "What's risky in my bags?" |
 | `price-alerts` | "Email me when BONK goes above $0.00005." |
 | `defi-safety` | "Where can I earn on USDC? Has this protocol been hacked?" |
+| `liquidity-pools` | "Does burning a v3/v4 LP NFT lock the principal? Who controls launch liquidity and fees?" |
 | `stonkfun-research` | "What's trending on StonkFun? Show this token's burns." |
 | `stonkfun-launch-guide` | "Help me plan a StonkFun launch paired with an xStock." |
 
@@ -52,11 +54,13 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 
 ## Data and privacy
 
-When Claude uses a skill, it calls the StalkChain connector at `https://data.stalkchain.com/mcp/directory`. Each call sends only the name of the tool and its inputs, such as a token address, a trader handle or a wallet address. Your conversation is never sent. Each call spends credits from your StalkChain account.
+Educational liquidity-pool questions can use the bundled read-only references without a connector call. Historical examples are not live verification; specific pool assessments require fresh evidence and may remain unknown.
+
+When Claude uses the StalkChain connector, it sends requests to `https://data.stalkchain.com/mcp/directory`. Each call sends only the name of the tool and its inputs, such as a token address, a trader handle or a wallet address. Your conversation is never sent. Each call spends credits from your StalkChain account.
 
 When you create an alert, StalkChain stores the token, the target and where to send it (your account's email, or a webhook URL you give) until you delete it or it fires.
 
-The plugin itself has no scripts and no hooks. The holder-tracker skill and the watchlist-analyst agent save snapshots and briefs as files in your own project, and nowhere else. Data returned describes public blockchain activity and public posts by traders. See the [privacy policy](https://data.stalkchain.com/privacy) and [terms](https://data.stalkchain.com/terms).
+The plugin itself has no scripts and no hooks. The holder-tracker skill and the watchlist-analyst agent save snapshots and briefs as files in your own project, and nowhere else. Universal trade review can save append-only, trader/account-isolated review records locally at the caller-approved path; drafts never change live trading rules. Data returned describes public blockchain activity and public posts by traders. See the [privacy policy](https://data.stalkchain.com/privacy) and [terms](https://data.stalkchain.com/terms).
 
 Nothing here is financial advice.
 
