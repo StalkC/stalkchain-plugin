@@ -15,7 +15,7 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 | `token-check` | "Is this coin safe? Is the dev selling?" |
 | `trader-check` | "Should I copy this trader? Compare these three." |
 | `trader-playbook` | "How does this trader actually trade? How long do they hold?" |
-| `universal-trade-review` | "Review this trader’s session through execution, risk, thesis and behavior—with evidence and draft next-window rules." |
+| `universal-trade-review` | "Review @trader's last week trade by trade" or "review my own trades and draft rules for next week." |
 | `smart-money-radar` | "What did the top traders buy in the last hour?" |
 | `whale-watch` | "Any big buys or sells over $50K today?" |
 | `launch-screener` | "Any new launches worth a look today?" |
