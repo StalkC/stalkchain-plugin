@@ -17,7 +17,7 @@ Research snapshot: **2026-10-02 UTC**. This portable package contains educationa
 
 ## Reproducibility boundary
 
-The upstream private research commands, math scripts, unit tests, manifests and acquisition reports are **not shipped** and are not plugin commands or installation prerequisites. References retain stated formulas, illustrative inputs, historical outputs and pinned official test vectors so readers can check them independently. No upstream math test, Solidity suite, backtest or live verification is claimed to have run as part of this package release. Inline Python examples can be run separately; numerical examples are not execution quotes.
+References keep stated formulas, illustrative inputs, historical outputs and pinned official test vectors so readers can check them independently. None of them is a live verification of any pool. Inline Python examples can be run separately; numerical examples are not execution quotes.
 
 ## Public source catalog
 

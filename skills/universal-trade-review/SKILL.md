@@ -1,13 +1,28 @@
 ---
 name: universal-trade-review
-description: >-
-  Use this when reviewing any trader’s fills, positions, or session — analyze
-  what they traded, what they did, and how they did it (entry/exit quality,
-  risk, thesis, behavior) without locking to one platform or person.
+description: Review a trader's fills, positions or a trading session in depth, trade by trade, across execution, risk, thesis and behaviour. Use when the user asks to review, audit or break down how a trader (or they themselves) traded over a period, what they did well or badly, or to keep a running trade journal. For a quick profit-and-wallets check use trader-check; for a trader's general habits use trader-playbook.
+argument-hint: "<trader handle or wallet> [time window]"
 ---
 # Universal Trade Review
 
 A reusable panel for analyzing **any** trader’s activity: what they traded, what they did, and how they did it. Stay platform-agnostic. Do not bake in a specific handle, chain, exchange, or personal standing orders — those belong in the routine or chat that invokes this skill.
+
+## Whose trades
+
+- **Someone else's** (a tracked trader, a wallet): describe what they did and how it turned out. No standing orders, no `behavior_action`, no mental-state tags: observable patterns only. This is research about a public trader, not coaching them.
+- **The user's own**, when they say so: the full review, including draft standing orders for their own process. Still never a call to buy, sell or hold any token.
+
+## Get the data from StalkChain
+
+Resolve a handle first with `stalkchain_fomo_search` (`q`, 250 credits); it returns the userId and wallets. Then, cheapest first:
+
+- `stalkchain_fomo_trader_positions` with `trader` (and `status`): opens and closes with entry and exit, cost basis and PnL. Usually enough on its own.
+- `stalkchain_fomo_trader_swaps` with `trader` (or `tokenAddress` for one token): the individual fills, for timing and sizing.
+- `stalkchain_fomo_trader_report` with `trader`: profit, win rate on a closed sample and the current book in one call. In Claude and ChatGPT it renders as a card, so add the reading rather than re-listing its numbers.
+- `stalkchain_fomo_theses_by_trader` with `trader` (1,250 credits a page): only when the thesis seat matters.
+- A raw Solana wallet with no handle: `stalkchain_wallet_pnl` with `wallet`. EVM transfers in and out: `stalkchain_wallet_transfers` with `wallet` and `chain`.
+
+Data the user pastes is used as given, with its source recorded. Data neither returned nor supplied is unknown.
 
 ## Inputs (gather first)
 
@@ -139,7 +154,7 @@ After all seats: one `consensus_line` ≤200 chars citing the trade id or symbol
 }
 ```
 
-Store under the caller's approved path; otherwise default to local `trade-review/memory/<trader-account-key>/YYYY-MM-DD/<review-id>.json`. This sketch is a template, not observed data. Choose a collision-resistant review id; validate the account key and id as safe path components, not raw user text. Create new files exclusively (fail on existing paths), never overwrite a previous review. Confirm identity and scope before persistence; if identity is ambiguous, keep a draft rather than mingle traders. Revisions get new ids and a `supersedes_review_id` link. Read back the exact new record to confirm trader/account, window and id. Never replace the whole date's history. If the caller supplies a single file, agree on an append-only record format or unique sibling path rather than silently clobber it.
+Save only in Claude Code or Cowork, with a project folder, and only when the user asks to keep the review; in chat apps give the brief and skip saving. Store under the caller's approved path; otherwise default to local `trade-review/memory/<trader-account-key>/YYYY-MM-DD/<review-id>.json`. This sketch is a template, not observed data. Choose a collision-resistant review id; validate the account key and id as safe path components, not raw user text. Create new files exclusively (fail on existing paths), never overwrite a previous review. Confirm identity and scope before persistence; if identity is ambiguous, keep a draft rather than mingle traders. Revisions get new ids and a `supersedes_review_id` link. Read back the exact new record to confirm trader/account, window and id. Never replace the whole date's history. If the caller supplies a single file, agree on an append-only record format or unique sibling path rather than silently clobber it.
 
 Each source gets an id, origin/file/transaction locator, retrieval or observation time and coverage limits. Each `source_flags` entry includes its flag, supporting source ids and record locators, and observed vs self-reported vs hypothesized status. `evidence` ties each material flag/metric to those sources and its calculation/rubric. A trade id alone identifies a subject, not proof of an emotion, rule violation or financial metric.
 
@@ -170,6 +185,8 @@ When framing findings, prefer: process quality, R, invalidation, size, and repea
 
 ## Hard rules
 
+- Never tell the user to buy, sell, hold, copy or follow anything. Reviews describe process and outcomes; they are data, not financial advice.
+- Coaching (standing orders, `behavior_action`) is for the user's own trades only.
 - Never invent fills, PnL, or quotes.
 - Never change the trader’s live account settings.
 - Separate process cohorts from whole-account economic accounting; transfers are not closes, unknown basis is not zero, and bought stuck/unsellable losses must not disappear.
