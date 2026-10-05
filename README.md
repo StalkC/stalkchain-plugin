@@ -52,6 +52,80 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 2. Connect **StalkChain** (the plugin's **Connectors** tab, or `/mcp` in Claude Code) and sign in with your StalkChain account. You'll need credits, which you can buy at [data.stalkchain.com](https://data.stalkchain.com).
 3. Ask a question, for example "What are the top traders buying on Solana right now?"
 
+### Hermes Agent
+
+Plugin page: https://hermes-agent.nousresearch.com/docs/plugins/stalkchain
+
+From the Hermes plugin catalog:
+
+```bash
+hermes plugins install stalkchain
+hermes plugins enable stalkchain
+```
+
+Or directly from this repository:
+
+```bash
+hermes plugins install StalkC/stalkchain-plugin --no-enable
+hermes plugins enable stalkchain
+```
+
+Then connect your StalkChain account. Hermes signs in only to MCP servers you
+add yourself, so add the StalkChain server once:
+
+```bash
+hermes mcp add stalkchain --url https://data.stalkchain.com/mcp/directory --auth oauth --connect-timeout 300
+```
+
+Your browser opens the StalkChain sign-in page. Sign in with email or X and
+approve access; the command waits up to five minutes. Hermes then lists the
+StalkChain tools; press Enter to keep them all. The tools are available from
+your next session (or after `/reload-mcp`). To sign in again later, run
+`hermes mcp login stalkchain`. On a remote or headless host, use the paste-back
+prompt or an SSH port forward described in the Hermes MCP docs.
+
+In **Hermes Desktop**, open **Capabilities → Connectors**, choose **Add your
+own** and enter:
+
+| Field | Value |
+| --- | --- |
+| Name | `stalkchain` |
+| Type | Streamable HTTP |
+| URL | `https://data.stalkchain.com/mcp/directory` |
+| Auth | OAuth |
+
+Save, then choose **Authenticate** on the StalkChain card. This link opens
+Hermes Desktop with the same form filled in:
+
+```text
+hermes://mcp/install?name=stalkchain&config=eyJ1cmwiOiJodHRwczovL2RhdGEuc3RhbGtjaGFpbi5jb20vbWNwL2RpcmVjdG9yeSIsImF1dGgiOiJvYXV0aCJ9
+```
+
+Keep the name `stalkchain`. Your own entry then takes the place of the server
+entry in the plugin, and the plugin keeps providing the skills (find them with
+`skills_list`).
+
+**Unattended runs (cron, messaging gateway).** OAuth tokens refresh on their
+own. If a refresh ever fails, Hermes parks the server instead of waiting for a
+browser; run `hermes mcp login stalkchain` once to reconnect. If you would
+rather use an API key from [data.stalkchain.com/dashboard](https://data.stalkchain.com/dashboard),
+put it in `~/.hermes/.env` as `STALKCHAIN_API_KEY` and configure the server in
+`~/.hermes/config.yaml` instead of the OAuth step:
+
+```yaml
+mcp_servers:
+  stalkchain:
+    url: https://data.stalkchain.com/mcp/directory
+    headers:
+      Authorization: "Bearer ${STALKCHAIN_API_KEY}"
+```
+
+**What Hermes loads from this package.** `mcp.json` (the StalkChain server) and
+the 18 skills under `skills/`. The `agents/` folder and the `.claude-plugin/`
+files are for Claude and are ignored by Hermes. There is no Python, no
+executable and no self-updating code. OAuth tokens are stored by Hermes itself
+(`~/.hermes/mcp-tokens/stalkchain.json`), not by this plugin.
+
 ## Data and privacy
 
 Educational liquidity-pool questions can use the bundled read-only references without a connector call. Historical examples are not live verification; specific pool assessments require fresh evidence and may remain unknown.
