@@ -16,7 +16,7 @@ Tickers need an address: `stalkchain_fomo_search` with `q` and `type: "tokens"` 
 
 `stalkchain_fomo_token_snapshot` with `address`, plus `chain` if needed and `holdersLimit` (default 50) (500 credits). It returns the capture time, price, total holders, top-10 share, the tracked traders holding it with amounts and values, and 24h flow.
 
-**Save it.** Where you can write files (Claude Code, Cowork), save the result unchanged to `snapshots/<token address>/<capturedAt>.json` in the user's project and tell them where. Where you can't, keep it in this conversation and say the comparison must happen here, or in an app that can save files.
+**Save it.** Where you can write files (Claude Code, Cowork, Cursor), save the result unchanged to `snapshots/<token address>/<capturedAt>.json` in the user's project and tell them where. Where you can't, keep it in this conversation and say the comparison must happen here, or in an app that can save files.
 
 ## 3. Compare with an earlier snapshot
 
