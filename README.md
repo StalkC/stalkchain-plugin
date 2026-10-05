@@ -122,9 +122,48 @@ mcp_servers:
 
 **What Hermes loads from this package.** `mcp.json` (the StalkChain server) and
 the 18 skills under `skills/`. The `agents/` folder and the `.claude-plugin/`
-files are for Claude and are ignored by Hermes. There is no Python, no
+files are for Claude, `.cursor-plugin/` is for Cursor, and Hermes ignores them.
+There is no Python, no
 executable and no self-updating code. OAuth tokens are stored by Hermes itself
 (`~/.hermes/mcp-tokens/stalkchain.json`), not by this plugin.
+
+### Cursor
+
+**Install.** Open **Customize** in Cursor, search for **StalkChain** and choose
+**Install** (project or user scope). Until it's listed in the Cursor
+Marketplace, you can install it either of these ways:
+
+- **Team marketplace** (Teams and Enterprise): **Dashboard → Plugins & MCPs →
+  Team Marketplaces → Add Marketplace → Import from Repo**, and paste
+  `https://github.com/StalkC/stalkchain-plugin`.
+- **Locally:** clone it into Cursor's local plugin folder, then run
+  **Developer: Reload Window**.
+
+  ```bash
+  git clone https://github.com/StalkC/stalkchain-plugin ~/.cursor/plugins/local/stalkchain
+  ```
+
+**Connect.** In **Customize**, find the **stalkchain** MCP server, switch it on
+and choose **Connect**. Your browser opens the StalkChain sign-in page; sign in
+with email or X and approve access. Then ask in Agent chat, for example "What
+are the top traders buying on Solana right now?" The skills load when your
+question matches; run one directly with `/token-check <address>` and the like.
+The three agents are available as subagents.
+
+**Just the connector, without the skills:** use this install link, or add the
+server to `~/.cursor/mcp.json` yourself.
+
+```text
+cursor://anysphere.cursor-deeplink/mcp/install?name=stalkchain&config=eyJ1cmwiOiJodHRwczovL2RhdGEuc3RhbGtjaGFpbi5jb20vbWNwL2RpcmVjdG9yeSJ9
+```
+
+```json
+{ "mcpServers": { "stalkchain": { "url": "https://data.stalkchain.com/mcp/directory" } } }
+```
+
+**What Cursor loads from this package.** `.cursor-plugin/plugin.json`, the 18
+skills under `skills/`, the three agents under `agents/` and the server in
+`.mcp.json`. No rules, hooks, commands or scripts.
 
 ## Data and privacy
 

@@ -1,0 +1,23 @@
+{
+  "name": "stalkchain",
+  "displayName": "StalkChain",
+  "version": "1.1.0",
+  "minClientVersions": {
+    "cursor": "3.13.0"
+  },
+  "description": "Crypto research in plain English: check a coin before you buy, vet a trader before you copy them, see what smart money is buying, review a wallet and set price alerts, on Solana, Base, BNB Chain, Ethereum and more. Never trades or moves funds.",
+  "author": {
+    "name": "StalkChain"
+  },
+  "publisher": "StalkChain",
+  "homepage": "https://stalkchain.com/mcp",
+  "repository": "https://github.com/StalkC/stalkchain-plugin",
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "keywords": ["crypto", "solana", "smart-money", "wallets", "memecoins", "research", "defi", "alerts", "mcp"],
+  "category": "integrations",
+  "tags": ["crypto", "finance", "research", "mcp"],
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "mcpServers": "./.mcp.json"
+}
