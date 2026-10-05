@@ -27,5 +27,5 @@ Chains here are `solana`, `ethereum`, `base`, `bsc`, `monad`, `hyperliquid` and 
 
 - A high APY made of reward tokens can vanish. Say how much of it is reward.
 - A missing value is `null`, never zero. No exploit on record is not the same as audited or safe.
-- Don't tell the user where to put their money. Present the data; it is not financial advice.
+- Don't recommend where to put money. Present the data; it is not financial advice.
 - Keep raw JSON out of the answer.

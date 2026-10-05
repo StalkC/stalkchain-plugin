@@ -51,5 +51,5 @@ Then one line: *"This is data, not financial advice."*
 - A missing value is `null`, never zero. Say "not available", never "0".
 - "Tracked traders" are a curated set of known traders, not every holder. Say "tracked traders" and keep them apart from total holders.
 - An empty dev or insider list means no dev position is known. It does not mean the dev has none, and it is not a safety signal.
-- Do not tell the user to buy or sell. Lay out the facts and let them decide.
+- Do not recommend buying or selling. Lay out the facts and let the user decide.
 - Keep raw JSON out of the answer. Quote the numbers that matter, with units.
