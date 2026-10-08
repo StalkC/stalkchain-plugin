@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "stalkchain",
-  "version": "1.1.0",
-  "description": "Crypto research in plain English: check a coin before you buy, vet a trader before you copy them, see what smart money is buying, review a wallet and set price alerts. Never trades or moves funds.",
+  "version": "1.2.0",
+  "description": "Crypto research in plain English: see what FOMO's top traders are buying, check a coin before you buy, vet a trader before you copy them, review a wallet and set price alerts. Never trades or moves funds.",
   "author": {
     "name": "StalkChain",
     "url": "https://stalkchain.com"
@@ -24,8 +24,8 @@
     "com.openai": {
       "interface": {
         "displayName": "StalkChain",
-        "shortDescription": "Crypto trader & coin research",
-        "longDescription": "StalkChain gives ChatGPT live crypto research data. Check a coin before you buy it: who holds it, whether the creator is selling, whether its liquidity is locked and its volume is real. Vet a trader before you copy them: their real wallets, profit, positions and how they actually trade. See which coins several top traders bought in the last hour, screen new launches, compare tokens, and review what a wallet holds and which holdings look risky, across Solana, Ethereum, Base, BNB Chain, Monad, Hyperliquid and Robinhood Chain. Set an email or webhook alert for a price or a smart-money buy. StalkChain reads public data and never trades, moves funds or signs anything; the only thing it changes is your own alerts, after you confirm. You need a StalkChain account with credits.",
+        "shortDescription": "FOMO trader & coin research",
+        "longDescription": "StalkChain gives ChatGPT live research on FOMO's top traders and the coins they trade. See what FOMO's top traders are buying right now, which coins several of them bought in the last hour, and what each one holds, with their real wallets, profit, positions and how they actually trade. Check a coin before you buy it: who holds it, whether the creator is selling, whether its liquidity is locked and its volume is real. Screen new launches, compare tokens, and review what a wallet holds and which holdings look risky, across Solana, Ethereum, Base, BNB Chain, Monad, Hyperliquid and Robinhood Chain. Set an email or webhook alert for a price or a smart-money buy. StalkChain reads public data and never trades, moves funds or signs anything; the only thing it changes is your own alerts, after you confirm. You need a StalkChain account with credits.",
         "developerName": "StalkChain",
         "category": "Finance",
         "capabilities": [
@@ -37,9 +37,9 @@
         "privacyPolicyURL": "https://data.stalkchain.com/privacy",
         "termsOfServiceURL": "https://data.stalkchain.com/terms",
         "defaultPrompt": [
+          "Use StalkChain to show what FOMO's top traders are buying right now",
           "Use StalkChain to check whether this coin is safe to buy",
-          "Use StalkChain to show what the top traders bought in the last hour",
-          "Use StalkChain to research this trader before I copy them"
+          "Use StalkChain to research this FOMO trader before I copy them"
         ],
         "brandColor": "#2563EB",
         "composerIcon": "./assets/icon.png",
@@ -101,7 +101,7 @@
         "commerce_description": "StalkChain does not sell anything inside ChatGPT and shows no purchase links. Users sign in to an existing StalkChain account; when it has no credits left, tools say lookups are paused."
       },
       "publication": {
-        "release_notes": "First ChatGPT release. Research coins, traders and wallets on live crypto data, across Solana, Ethereum, Base, BNB Chain, Monad, Hyperliquid and Robinhood Chain, with interactive cards for token checks, trader reports, the leaderboard, wallet portfolios and the live trade feed. Price and smart-money alerts in your own account. Never trades, moves funds or signs anything."
+        "release_notes": "Leads with FOMO's top traders: see what they are buying right now, which coins several of them bought in the last hour, and their real wallets and profit. Research coins, traders and wallets on live crypto data across Solana, Ethereum, Base, BNB Chain, Monad, Hyperliquid and Robinhood Chain, with interactive cards. Price and smart-money alerts in your own account. Never trades, moves funds or signs anything."
       }
     }
   }

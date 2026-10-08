@@ -1,8 +1,8 @@
 {
   "name": "stalkchain",
   "displayName": "StalkChain",
-  "version": "1.1.0",
-  "description": "Crypto research in plain English: check a coin before you buy, vet a trader before you copy them, see what smart money is buying, review your bags, screen new launches and set price alerts, on Solana, Base, BNB Chain, Ethereum and more. Never trades or moves funds.",
+  "version": "1.2.0",
+  "description": "Crypto research in plain English: see what FOMO's top traders are buying, check a coin before you buy, vet a trader before you copy them, see what smart money is buying, review your bags, screen new launches and set price alerts, on Solana, Base, BNB Chain, Ethereum and more. Never trades or moves funds.",
   "author": { "name": "StalkChain", "url": "https://stalkchain.com" },
   "homepage": "https://stalkchain.com/mcp",
   "repository": "https://github.com/StalkC/stalkchain-plugin",
