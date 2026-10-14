@@ -21,7 +21,12 @@ Answer one question for the user: **what do the facts say about this coin right 
 2. `stalkchain_token_quality` with `token` (250 credits): organic versus total volume. A low organic share means wash trading.
 3. `stalkchain_fomo_analyze_token` with `address` (750 credits): buy and sell flow, tracked smart-money holders, and the dev's and insiders' positions in one call.
 
-**EVM chains** (Base, BNB Chain, Ethereum, Monad, Robinhood Chain): the on-chain tools above are Solana-only, so call `stalkchain_fomo_analyze_token` with `address`, plus `chain` if it returns nothing. If it is a bare contract nobody tracks, `stalkchain_token_info` with `chain` and `address` (250 credits) at least names it.
+**EVM chains** (Base, BNB Chain, Ethereum, Monad, Robinhood Chain):
+
+1. `stalkchain_evm_token_check` with `chain` and `token` (250 credits): whether it can be sold (honeypot), buy and sell tax, whether the owner can mint, pause or blacklist, verified code, holder concentration, the creator's past honeypots and locked liquidity, red flags first. If it says honeypot, stop and say so.
+2. `stalkchain_fomo_analyze_token` with `address` (750 credits): flow, tracked smart-money holders and the dev's position. Skip it if step 1 already found a honeypot.
+
+Never send a `0x` address to the Solana tools.
 
 In Claude and ChatGPT, `stalkchain_fomo_analyze_token` shows the user an interactive card. Don't re-list its numbers; add what they mean and the verdict. Where no card appears (a terminal), include the key numbers.
 
@@ -29,14 +34,14 @@ In Claude and ChatGPT, `stalkchain_fomo_analyze_token` shows the user an interac
 
 - The user mentions a position size, or liquidity looks thin: `stalkchain_token_exit_check` with `token` and `usd` set to their size (500 credits). This quotes what they would really get back on a sale.
 - The coin is new (days old), or the dev is unknown: `stalkchain_token_deployer` with `token` (500 credits), which lists everything that wallet launched before and how each one ended.
-- Many early wallets, or the launch looks sniped: `stalkchain_token_early_buyers` with `token` (500 credits).
+- Many early wallets, or the launch looks sniped: `stalkchain_token_early_buyers` with `token` on Solana, or `stalkchain_evm_early_buyers` with `chain` and `token` on EVM (500 credits each). Both say whether the first buyers still hold.
 - The user wants to know whether the big holders are leaving: `stalkchain_fomo_kol_sell_pressure` with `address` (375 credits).
 
 ## 4. Answer in this shape
 
 **Verdict:** one plain sentence, e.g. "Several serious red flags" or "No major red flags found in the data".
 
-**Red flags:** only the ones the data shows. Examples: mint authority still live, LP not burned, dev sold, top 10 hold over 50%, mostly wash volume, deployer has dead launches, heavy sniper share.
+**Red flags:** only the ones the data shows. Examples: honeypot or high sell tax, owner can still mint or pause, mint authority still live, LP not burned, dev sold, top 10 hold over 50%, mostly wash volume, deployer has dead launches, heavy sniper share, early buyers already exited.
 
 **Good signs:** for example LP burned, authorities revoked, tracked traders holding, organic volume, buyers outnumbering sellers.
 

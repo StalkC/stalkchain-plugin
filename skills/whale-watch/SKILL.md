@@ -1,6 +1,6 @@
 ---
 name: whale-watch
-description: Spot large buys and sells by tracked crypto traders, and recent moves by named whale wallets. Use when the user asks about whale activity, big buys or big sells, large trades right now, what a whale wallet has been doing, or wants trades above a dollar amount.
+description: Spot large buys and sells by tracked crypto traders, recent moves by named whale wallets, and the biggest Hyperliquid perps traders. Use when the user asks about whale activity, big buys or big sells, large trades right now, what a whale wallet has been doing, leveraged whales on Hyperliquid, or wants trades above a dollar amount.
 argument-hint: "[minimum USD, chain, token or wallet]"
 ---
 
@@ -28,7 +28,14 @@ Free alternative for "right now": `stalkchain_fomo_watch_stream` with `stream: "
 - **Solana wallet:** there is no transfer list. Use `stalkchain_wallet_pnl` with `wallet` (500) for positions and recent profit.
 - **A trader's handle:** filter the feed with `trader`, or follow **trader-check**.
 
-## 3. Answer in this shape
+## 3. Perps whales (Hyperliquid)
+
+When the user asks about leverage, perps or Hyperliquid whales:
+
+- `stalkchain_perps_leaderboard` with `window` (250 credits): the biggest winners or, with `sortBy: "losses"`, losers. It covers every Hyperliquid trader, not just tracked ones.
+- `stalkchain_perps_wallet` with `wallet` (250 each) for what a whale is long or short now, with liquidation prices. Ask before checking more than three.
+
+## 4. Answer in this shape
 
 **Biggest moves:** a table, largest first: time, trader or wallet, buy or sell, token and chain, size, and which measure the size is (trade size, position value or realised profit).
 

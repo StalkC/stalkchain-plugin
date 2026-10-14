@@ -1,7 +1,7 @@
 {
   "name": "stalkchain",
   "displayName": "StalkChain",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "minClientVersions": {
     "cursor": "3.13.0"
   },

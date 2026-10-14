@@ -12,12 +12,13 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 
 | Skill | Ask something like |
 | --- | --- |
-| `token-check` | "Is this coin safe? Is the dev selling?" |
+| `token-check` | "Is this coin safe? Is it a honeypot? Is the dev selling?" |
 | `trader-check` | "Should I copy this trader? Compare these three." |
 | `trader-playbook` | "How does this trader actually trade? How long do they hold?" |
 | `universal-trade-review` | "Review @trader's last week trade by trade" or "review my own trades and draft rules for next week." |
 | `smart-money-radar` | "What did the top traders buy in the last hour?" |
-| `whale-watch` | "Any big buys or sells over $50K today?" |
+| `whale-watch` | "Any big buys or sells over $50K today? Who are the biggest Hyperliquid whales?" |
+| `perps-check` | "Is SOL funding positive on Hyperliquid, and higher than Binance? Are TSLA longs crowded?" |
 | `launch-screener` | "Any new launches worth a look today?" |
 | `narrative-tracker` | "What are the narratives right now?" |
 | `token-compare` | "Compare these three coins side by side." |
@@ -121,7 +122,7 @@ mcp_servers:
 ```
 
 **What Hermes loads from this package.** `mcp.json` (the StalkChain server) and
-the 18 skills under `skills/`. The `agents/` folder and the `.claude-plugin/`
+the 19 skills under `skills/`. The `agents/` folder and the `.claude-plugin/`
 files are for Claude, `.cursor-plugin/` is for Cursor, and Hermes ignores them.
 There is no Python, no
 executable and no self-updating code. OAuth tokens are stored by Hermes itself
@@ -161,7 +162,7 @@ cursor://anysphere.cursor-deeplink/mcp/install?name=stalkchain&config=eyJ1cmwiOi
 { "mcpServers": { "stalkchain": { "url": "https://data.stalkchain.com/mcp/directory" } } }
 ```
 
-**What Cursor loads from this package.** `.cursor-plugin/plugin.json`, the 18
+**What Cursor loads from this package.** `.cursor-plugin/plugin.json`, the 19
 skills under `skills/`, the three agents under `agents/` and the server in
 `.mcp.json`. No rules, hooks, commands or scripts.
 
