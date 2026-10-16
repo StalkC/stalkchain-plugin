@@ -3,18 +3,7 @@
   "mcpServers": {
     "stalkchain": {
       "type": "streamable-http",
-      "url": "https://data.stalkchain.com/mcp/directory",
-      "extensions": {
-        "com.openai": {
-          "auth": {
-            "type": "oauth",
-            "client": {
-              "mode": "dcr"
-            },
-            "baseScopes": ["mcp"]
-          }
-        }
-      }
+      "url": "https://data.stalkchain.com/mcp/directory"
     }
   }
 }
