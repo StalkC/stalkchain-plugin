@@ -44,7 +44,7 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 
 ## Get started
 
-1. Install the plugin from your app's plugin directory in Claude, Cowork or ChatGPT. In Claude Code, this repository is also a plugin marketplace:
+1. Install the plugin from your app's plugin directory in Claude, Cowork or ChatGPT. To add it to ChatGPT by hand, upload the archive from `scripts/chatgpt-archive.sh` (Plugins › Add › Upload plugin archive): it declares the server's OAuth sign-in, which ChatGPT needs to connect it. In Claude Code, this repository is also a plugin marketplace:
 
    ```
    /plugin marketplace add StalkC/stalkchain-plugin
