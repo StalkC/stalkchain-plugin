@@ -32,6 +32,7 @@ Free alternative for "right now": `stalkchain_fomo_watch_stream` with `stream: "
 
 When the user asks about leverage, perps or Hyperliquid whales:
 
+- Who is long or short one coin: `stalkchain_perps_smart_money` with `coin` and `traders: 100` (750 credits), not one wallet at a time.
 - `stalkchain_perps_leaderboard` with `window` (250 credits): the biggest winners or, with `sortBy: "losses"`, losers. It covers every Hyperliquid trader, not just tracked ones.
 - `stalkchain_perps_wallet` with `wallet` (250 each) for what a whale is long or short now, with liquidation prices. Ask before checking more than three.
 

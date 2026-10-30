@@ -1,12 +1,16 @@
 ---
 name: perps-check
-description: Read the perps market on Hyperliquid before trading it. Use when the user asks about funding rates, open interest, whether longs or shorts are crowded, a funding arbitrage between Hyperliquid, Binance and Bybit, what is hot on Hyperliquid, stock perps such as TSLA or NVDA, or a perp chart.
+description: Read the perps market on Hyperliquid and who is positioned in it. Use when the user asks which wallets or top traders are long or short a coin ("who is long $HYPE", "are whales short BTC") and their size, entry, PnL or liquidation prices, about funding rates, open interest, whether longs or shorts are crowded, a funding arbitrage between Hyperliquid, Binance and Bybit, what is hot on Hyperliquid, stock perps such as TSLA or NVDA, or a perp chart.
 argument-hint: "[coin or stock ticker]"
 ---
 
 # Check a perp market
 
 Answer one question: **who is paying whom, how crowded is it, and what is it doing?** Use the StalkChain connector. Each call below is 250 credits; most answers need two.
+
+## 0. Who is long and who is short
+
+When the user asks which wallets or traders are long or short a coin, or their PnL on it ("$HYPE" in a long/short question means the HYPE perp), call `stalkchain_perps_smart_money` first, with `coin` and `traders: 100` (750 credits). It returns, for the most profitable Hyperliquid traders: how many hold the coin, long and short counts, dollar size, average entries, unrealized PnL, the nearest liquidation prices on each side, and the biggest positions by wallet. Show a long/short summary table, then the biggest shorts and biggest longs with wallet, size, entry, unrealized PnL, leverage and liquidation price. Don't use the social-trading feed or FOMO trader positions for this: they only cover FOMO users.
 
 ## 1. The market
 
@@ -25,7 +29,7 @@ No coin named ("what is hot on Hyperliquid")? Call it with `sortBy` set to `volu
 ## 3. Only if asked
 
 - A chart: `stalkchain_perps_candles` with `coin`, `interval` and `hours`.
-- Who is positioned: `stalkchain_perps_leaderboard`, then `stalkchain_perps_wallet` for a named wallet. Ask before checking more than three wallets.
+- One named wallet: `stalkchain_perps_wallet`. The best traders overall: `stalkchain_perps_leaderboard`.
 
 ## 4. Answer in this shape
 
