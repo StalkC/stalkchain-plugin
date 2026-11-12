@@ -95,12 +95,7 @@ own** and enter:
 | URL | `https://data.stalkchain.com/mcp/directory` |
 | Auth | OAuth |
 
-Save, then choose **Authenticate** on the StalkChain card. This link opens
-Hermes Desktop with the same form filled in:
-
-```text
-hermes://mcp/install?name=stalkchain&config=eyJ1cmwiOiJodHRwczovL2RhdGEuc3RhbGtjaGFpbi5jb20vbWNwL2RpcmVjdG9yeSIsImF1dGgiOiJvYXV0aCJ9
-```
+Save, then choose **Authenticate** on the StalkChain card.
 
 Keep the name `stalkchain`. Your own entry then takes the place of the server
 entry in the plugin, and the plugin keeps providing the skills (find them with
@@ -108,18 +103,7 @@ entry in the plugin, and the plugin keeps providing the skills (find them with
 
 **Unattended runs (cron, messaging gateway).** OAuth tokens refresh on their
 own. If a refresh ever fails, Hermes parks the server instead of waiting for a
-browser; run `hermes mcp login stalkchain` once to reconnect. If you would
-rather use an API key from [data.stalkchain.com/dashboard](https://data.stalkchain.com/dashboard),
-put it in `~/.hermes/.env` as `STALKCHAIN_API_KEY` and configure the server in
-`~/.hermes/config.yaml` instead of the OAuth step:
-
-```yaml
-mcp_servers:
-  stalkchain:
-    url: https://data.stalkchain.com/mcp/directory
-    headers:
-      Authorization: "Bearer ${STALKCHAIN_API_KEY}"
-```
+browser; run `hermes mcp login stalkchain` once to reconnect.
 
 **What Hermes loads from this package.** `mcp.json` (the StalkChain server) and
 the 19 skills under `skills/`. The `agents/` folder and the `.claude-plugin/`
