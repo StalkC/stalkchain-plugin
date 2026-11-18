@@ -44,7 +44,7 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 
 ## Get started
 
-1. Install the plugin from your app's plugin directory in Claude, Cowork or ChatGPT. To add it to ChatGPT by hand, upload the archive from `scripts/chatgpt-archive.sh` (Plugins › Add › Upload plugin archive): it declares the server's OAuth sign-in, which ChatGPT needs to connect it. In Claude Code, this repository is also a plugin marketplace:
+1. In Claude Code, add this repository as a plugin marketplace and install StalkChain. A public listing in each app is a separate review; repository installation does not mean the plugin is approved in that app's directory:
 
    ```
    /plugin marketplace add StalkC/stalkchain-plugin
@@ -52,6 +52,32 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
    ```
 2. Connect **StalkChain** (the plugin's **Connectors** tab, or `/mcp` in Claude Code) and sign in with your StalkChain account. You'll need credits, which you can buy at [data.stalkchain.com](https://data.stalkchain.com).
 3. Ask a question, for example "What are the top traders buying on Solana right now?"
+
+### Build a ChatGPT upload archive
+
+For a manual upload in a compatible ChatGPT workspace, build an Agent Plugins
+archive from a committed checkout. This includes the existing provider-neutral
+manifest and MCP definition; upload/review availability depends on the workspace.
+
+```bash
+mkdir -p dist
+git archive --format=zip --output=dist/stalkchain-chatgpt.zip HEAD \
+  plugin.json mcp.json skills agents assets/icon.png assets/logo.png README.md LICENSE
+```
+
+Upload `dist/stalkchain-chatgpt.zip` where your workspace offers **Upload plugin
+archive**. `mcp.json` keeps the remote server URL unchanged; the client discovers
+OAuth sign-in from the server's protected-resource and authorization metadata.
+An upload is not public directory approval. The archive-building command is a
+manual maintainer step; the plugin does not run it on installation.
+
+### Package maintenance
+
+The distributed plugin contains Markdown, JSON, license text and PNG images.
+Keep build helpers outside the package and use the PNG logo when adding a new
+client manifest. This lets the remote MCP and skills be reviewed without shipping
+an executable helper or an SVG asset. The catalog still performs its own safety
+and policy review; a local validation pass does not guarantee directory approval.
 
 ### Hermes Agent
 
