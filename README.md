@@ -53,6 +53,18 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 2. Connect **StalkChain** (the plugin's **Connectors** tab, or `/mcp` in Claude Code) and sign in with your StalkChain account. You'll need credits, which you can buy at [data.stalkchain.com](https://data.stalkchain.com).
 3. Ask a question, for example "What are the top traders buying on Solana right now?"
 
+### Install StalkChain in Codex
+
+Add the StalkChain marketplace from this repository and install the plugin:
+
+```sh
+codex plugin marketplace add StalkC/stalkchain-plugin
+codex plugin add stalkchain@stalkchain
+```
+
+Open the plugin in Codex and connect StalkChain Data. Sign in with your
+StalkChain account before making a lookup. Lookups use account credits.
+
 ### Install an individual skill in Codex
 
 From the project where you want to use the skill, install it with the
