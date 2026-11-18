@@ -53,6 +53,19 @@ The plugin never trades, moves funds or signs anything. The only thing it can ch
 2. Connect **StalkChain** (the plugin's **Connectors** tab, or `/mcp` in Claude Code) and sign in with your StalkChain account. You'll need credits, which you can buy at [data.stalkchain.com](https://data.stalkchain.com).
 3. Ask a question, for example "What are the top traders buying on Solana right now?"
 
+### Install an individual skill in Codex
+
+From the project where you want to use the skill, install it with the
+[Skills CLI](https://www.skills.sh/docs/cli):
+
+```bash
+npx skills add https://github.com/StalkC/stalkchain-plugin --skill trader-check --agent codex
+```
+
+Choose another name from the skills table to install a different skill. In Codex,
+connect [StalkChain Data](https://data.stalkchain.com/docs/guides/getting-started)
+and sign in separately. StalkChain lookups use account credits.
+
 ### Build a ChatGPT upload archive
 
 For a manual upload in a compatible ChatGPT workspace, build an Agent Plugins
