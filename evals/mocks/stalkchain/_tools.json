@@ -2573,7 +2573,7 @@
   {
    "name": "stalkchain_alert_create",
    "title": "Create a price or smart-money alert",
-   "description": "Set up an alert that notifies the user once, by email or their own webhook (Discord, Slack or Telegram bot URL), when a token crosses a price or when several tracked traders buy it. Kinds: price_above / price_below (needs priceUsd), smart_money_buy (fires when at least minTraders tracked traders, default 2, buy the token within a few minutes). Needs the token's address: resolve a ticker first with stalkchain_fomo_search or stalkchain_token_prices_multichain. Chains: solana, ethereum, base, bsc. Alerts fire once and then switch off; checked about every 5 minutes; up to 20 active per account. Confirm the token, threshold and delivery with the user before calling. Returns the alert and the token's current price, so you can tell the user how far away the threshold is.",
+   "description": "Set up an alert that notifies the user once, by email to the account's address, when a token crosses a price or when several tracked traders buy it. Kinds: price_above / price_below (needs priceUsd), smart_money_buy (fires when at least minTraders tracked traders, default 2, buy the token within a few minutes). Needs the token's address: resolve a ticker first with stalkchain_fomo_search or stalkchain_token_prices_multichain. Chains: solana, ethereum, base, bsc. Alerts fire once and then switch off; checked about every 5 minutes; up to 20 active per account. Confirm the token, threshold and delivery with the user before calling. Returns the alert and the token's current price, so you can tell the user how far away the threshold is.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -2612,19 +2612,6 @@
       "maximum": 20,
       "description": "smart_money_buy: how many tracked traders must buy. Default 2"
      },
-     "channel": {
-      "type": "string",
-      "enum": [
-       "email",
-       "webhook"
-      ],
-      "description": "email (the account's address, default) or webhook"
-     },
-     "webhookUrl": {
-      "type": "string",
-      "format": "uri",
-      "description": "https Discord, Slack or Telegram bot webhook URL, when channel is webhook"
-     },
      "note": {
       "type": "string",
       "maxLength": 200,
@@ -2640,7 +2627,7 @@
    },
    "annotations": {
     "readOnlyHint": false,
-    "destructiveHint": false,
+    "destructiveHint": true,
     "idempotentHint": false,
     "openWorldHint": true
    }
